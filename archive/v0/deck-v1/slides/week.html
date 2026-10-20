@@ -1,0 +1,47 @@
+<section id="week" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between;gap:32px">
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">A week of runs</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #2D57A3;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">1 · Sun 12:00</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Usage exports</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Browser, Windows, ActivityWatch → Parquet</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #2D57A3;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">2 · Sun 12:20</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Summary precompute</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Rollups, deltas, dashboard rebuilt</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #9E356D;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">3 · Sun 6:10 pm</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">weekly-review</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Scorecard, time vs plan, open loops</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #9A6A0C;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">4 · Sun evening</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Handwritten reflection</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Notebook, guided by data prompts</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #634A9A;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">5 · Sun or Mon</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Plan the week</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Top 5 priorities, dated commitments</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #634A9A;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">6 · Daily 7:07</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">productivity-sync</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Delta pull, Notion log, top 3</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #9E356D;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">7 · Weekdays 8:00</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">morning-brief</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Waits for the sync, renders proposals</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-top:8px solid #634A9A;padding:20px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">8 · Wednesday</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Mid-week pulse</h3>
+<p style="font-size:24px;line-height:1.35;color:#4D5953">Priorities checked against progress</p>
+</div>
+</div>
+<p style="font-size:30px;line-height:1.4;width:1664px"><b>Agents never call each other.</b> Each run writes a dated file that the next run checks for.</p>
+<aside>This is the cadence. Sunday noon the deterministic jobs run. Sunday evening the review agent interprets their output. Then I step away and reflect on paper, which is the one step I deliberately did not automate. Weekdays, the sync runs at 7:07 and the brief at 8:00. The design choice worth calling out: hand-offs are files, not agent-to-agent calls. The brief checks for today’s sync file up to three times, five minutes apart, then falls back to the most recent one and labels its date. That makes failures visible and every step replayable.</aside>
+</section>

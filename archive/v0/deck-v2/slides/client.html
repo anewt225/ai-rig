@@ -1,0 +1,21 @@
+<section id="client" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Design sketch, not built</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Applying it to a five-store franchise</h2>
+</div>
+<table style="font-size:24px;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
+<tr><th style="width:19%;text-align:left;color:#4D5953">KPI or task</th><th style="width:17%;text-align:left;color:#4D5953">Source of truth</th><th style="width:34%;text-align:left;color:#4D5953">Who does the work</th><th style="width:30%;text-align:left;color:#4D5953">Guardrail</th></tr>
+<tr><td><b>Sales mix</b></td><td>POS export</td><td><span style="color:#2D57A3"><b>Code:</b></span> nightly pull, reconciled to the franchisor report</td><td>A mismatch flags the store; nothing auto-corrects</td></tr>
+<tr><td><b>Tub inventory</b></td><td>Manager photo</td><td><span style="color:#9E356D"><b>Model:</b></span> estimates fill level; the manager confirms</td><td>Tolerance band; the manager’s tap is the record</td></tr>
+<tr><td><b>Reorders</b></td><td>Inventory × sales</td><td><span style="color:#2D57A3"><b>Code:</b></span> par-level formula</td><td>The model never sets order sizes</td></tr>
+<tr><td><b>Monday brief</b></td><td>All of the above</td><td><span style="color:#9E356D"><b>Model:</b></span> narrative and top 3 per store</td><td>Proposals only; nothing sent to staff</td></tr>
+</table>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9A6A0C;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Week 1</p><p style="font-size:26px;font-weight:600">Discover</p><p style="font-size:24px;line-height:1.3;color:#4D5953">KPIs and the source that owns each</p></div>
+<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #2D57A3;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Weeks 2–3</p><p style="font-size:26px;font-weight:600">Build</p><p style="font-size:24px;line-height:1.3;color:#4D5953">Pulls, reconciliation, photo capture</p></div>
+<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9E356D;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Week 4</p><p style="font-size:26px;font-weight:600">Evaluate</p><p style="font-size:24px;line-height:1.3;color:#4D5953">Photo estimates vs manual counts</p></div>
+<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #2D57A3;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Week 5</p><p style="font-size:26px;font-weight:600">Tune</p><p style="font-size:24px;line-height:1.3;color:#4D5953">Cost per run, what to cache</p></div>
+<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9A6A0C;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Week 6</p><p style="font-size:26px;font-weight:600">Hand off</p><p style="font-size:24px;line-height:1.3;color:#4D5953">Train managers, measure time saved</p></div>
+</div>
+<aside>A franchisee with five ice cream stores wanted help with inventory, training and POS data. Their managers spent their analysis time collecting data. The same patterns apply: agree the KPIs first and which source owns each one, because the POS, the franchisor portal and the scheduling tool will disagree; put reconciliation and reorder math in code; use the model where tolerance is acceptable, like estimating how full a tub is from a photo, and for the manager-facing narrative. A manager’s confirmation is the record, and the brief proposes rather than sends. Pilot in one store, then roll out.</aside>
+</section>

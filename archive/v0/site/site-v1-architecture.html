@@ -1,0 +1,694 @@
+<title>Alex Newton's AI Rig</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="How Alex Newton runs his week on Claude: scheduled agents, custom plugins, a custom MCP server and a Python data pipeline, mapped down to the implementation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a wiring sheet. Five layer columns (sources → connect → orchestrate → state → outputs),
+   a run-schedule strip under them, and a detail panel that explains how the selected part is built.
+   Color encodes who does the work: Python (deterministic), Claude (LLM), hybrid, or me. */
+:root{
+  --bg:#F1F3EF; --surface:#FFFFFF; --sunk:#E7EAE4; --ink:#17201C; --muted:#56625B; --line:#D2D8D0;
+  --accent:#1D6B58; --accent-ink:#FFFFFF;
+  --det:#2D57A3; --llm:#9E356D; --hyb:#634A9A; --hum:#9A6A0C;
+  --det-bg:#E4EBF7; --llm-bg:#F5E3EC; --hyb-bg:#EAE5F4; --hum-bg:#F4ECDA;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
+  --accent:#5BC3A4; --accent-ink:#0B1411;
+  --det:#86A9F2; --llm:#EC86B9; --hyb:#B39AE8; --hum:#E3B252;
+  --det-bg:#18233A; --llm-bg:#341A28; --hyb-bg:#251D38; --hum-bg:#2F2512; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
+  --accent:#5BC3A4; --accent-ink:#0B1411;
+  --det:#86A9F2; --llm:#EC86B9; --hyb:#B39AE8; --hum:#E3B252;
+  --det-bg:#18233A; --llm-bg:#341A28; --hyb-bg:#251D38; --hum-bg:#2F2512; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent);text-underline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+p{margin:0}
+.mono{font-family:var(--mono)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header.top{padding-block:40px 20px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.title-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;margin-top:12px}
+h1{font-size:clamp(40px,7vw,76px);font-weight:800;font-variation-settings:"wdth" 118;line-height:.92;letter-spacing:-.01em}
+.lede{max-width:62ch;font-size:17px;color:var(--ink);margin-top:18px}
+.lede b{font-weight:600}
+.who{font:13px/1.5 var(--mono);color:var(--muted);text-align:right}
+.who a{color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin-top:28px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.stat{padding:14px 14px 14px 0;min-width:0}
+.stat + .stat{padding-left:14px;border-left:1px solid var(--line)}
+.stat .n{font:700 30px/1 var(--display);font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.35}
+@media (max-width:820px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(odd){padding-left:0;border-left:0}.stat{border-bottom:1px solid var(--line)}.stat:nth-child(5){grid-column:1/-1}.who{text-align:left}}
+
+/* legend + tabs */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding-block:10px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{font:600 14px/1 var(--body);padding:9px 14px;border-radius:999px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer}
+.tab:hover{color:var(--ink);border-color:var(--line)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.sw.det{background:var(--det)}.sw.llm{background:var(--llm)}.sw.hyb{background:linear-gradient(90deg,var(--det) 50%,var(--llm) 50%)}.sw.hum{background:var(--hum)}
+
+main{padding-block:28px 64px}
+section.view{display:grid;gap:28px}
+.view-intro{max-width:70ch;color:var(--muted)}
+.view-intro b{color:var(--ink);font-weight:600}
+h2{font-size:26px;font-weight:700;font-variation-settings:"wdth" 108}
+h3{font-size:18px;font-weight:700;font-variation-settings:"wdth" 104}
+
+/* architecture */
+.arch{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media (max-width:1060px){.arch{grid-template-columns:minmax(0,1fr)}}
+.layers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.layers{grid-template-columns:minmax(0,1fr)}}
+.layer{display:flex;flex-direction:column;gap:8px;min-width:0}
+.layer-h{font:500 11.5px/1.2 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 2px 6px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:6px}
+.layer-h i{font-style:normal;color:var(--ink)}
+.node{all:unset;box-sizing:border-box;cursor:pointer;display:block;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--line));border-radius:var(--r);padding:9px 10px 10px;min-width:0;transition:opacity .15s,border-color .15s,transform .15s}
+.node:hover{border-color:var(--ink);border-left-color:var(--c)}
+.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.node .nm{font-weight:600;font-size:13.5px;line-height:1.25}
+.node .sb{font-size:12px;color:var(--muted);line-height:1.35;margin-top:3px}
+.node.det{--c:var(--det)}.node.llm{--c:var(--llm)}.node.hyb{--c:var(--hyb)}.node.hum{--c:var(--hum)}
+.layers.focus .node{opacity:.32}
+.layers.focus .node.on,.layers.focus .node.up,.layers.focus .node.down{opacity:1}
+.node.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.node .dir{display:none;font:500 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-top:6px}
+.node.up .dir.u,.node.down .dir.d{display:block}
+.node.up .dir.u{color:var(--muted)}.node.down .dir.d{color:var(--accent)}
+
+.panel{position:sticky;top:76px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 20px;display:grid;gap:12px;min-width:0}
+@media (max-width:1060px){.panel{position:static}}
+.panel .kind{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{font:500 11.5px/1 var(--mono);padding:5px 7px;border-radius:4px;letter-spacing:.02em;white-space:nowrap}
+.chip.det{background:var(--det-bg);color:var(--det)}.chip.llm{background:var(--llm-bg);color:var(--llm)}.chip.hyb{background:var(--hyb-bg);color:var(--hyb)}.chip.hum{background:var(--hum-bg);color:var(--hum)}
+.chip.plain{background:var(--sunk);color:var(--muted)}
+.panel h3{font-size:21px}
+.panel p{color:var(--ink)}
+.panel h4{font:500 11.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.panel ul,.dd ul,.dd ol{margin:0;padding-left:18px;display:grid;gap:5px}
+.panel li{font-size:14px}
+.panel code,.dd code,.inv code{font:12.5px var(--mono);background:var(--sunk);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+.panel .hint{color:var(--muted);font-size:13px}
+
+/* schedule strip */
+.sched{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 18px}
+.sched-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline}
+.sched-head p{color:var(--muted);font-size:13.5px;max-width:70ch}
+.runs-scroll{overflow-x:auto;margin-top:14px;padding-bottom:4px}
+.runs{display:grid;grid-template-columns:repeat(8,minmax(128px,1fr));gap:0;min-width:1040px;counter-reset:run}
+.run{position:relative;padding:0 12px 0 0}
+.run::before{content:"";position:absolute;left:0;right:0;top:15px;height:2px;background:var(--line)}
+.run:last-child::before{right:50%}
+.run .dot{position:relative;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--mono);color:#fff;background:var(--c)}
+.run.det{--c:var(--det)}.run.llm{--c:var(--llm)}.run.hyb{--c:var(--hyb)}.run.hum{--c:var(--hum)}
+:root[data-theme="dark"] .run .dot{color:var(--sunk)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .run .dot{color:var(--sunk)}}
+.run .when{font:500 12px/1.3 var(--mono);color:var(--muted);margin-top:10px}
+.run .what{font-weight:600;font-size:13.5px;line-height:1.3;margin-top:3px}
+.run .how{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:4px}
+
+/* inventory */
+.filters{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.fgroup{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.fgroup .lab{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.pill{font:500 13px/1 var(--body);padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.search{font:14px var(--body);padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0;width:220px;max-width:100%}
+.count{font:13px var(--mono);color:var(--muted)}
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 14px 15px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card .nm{font-weight:600;font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.card .meta{display:flex;flex-wrap:wrap;gap:5px}
+.card p{font-size:13.5px;color:var(--muted)}
+.card .lnk{font-size:13px;margin-top:auto}
+.status{font:500 11px/1 var(--mono);white-space:nowrap;padding:4px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.status.live{color:var(--accent);border-color:var(--accent)}
+.empty{color:var(--muted);padding:24px 0}
+
+/* deep dives */
+.dd-nav{display:flex;flex-wrap:wrap;gap:6px}
+.dd{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+@media (max-width:960px){.dd{grid-template-columns:minmax(0,1fr)}}
+.dd-main{display:grid;gap:22px;min-width:0}
+.dd-main > div{display:grid;gap:8px}
+.dd h2{font-size:30px}
+.dd .lede2{font-size:16.5px;max-width:66ch}
+.dd .sec-h{font:500 11.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.dd li{max-width:72ch}
+.steps{list-style:none;padding:0!important;display:grid;gap:0!important;border-top:1px solid var(--line)}
+.steps li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line);max-width:none}
+.steps .sn{font:500 12px/1.6 var(--mono);color:var(--muted)}
+.steps .st b{font-weight:600}
+.steps .st .chip{margin-left:6px;vertical-align:1px}
+.aside{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px;position:sticky;top:76px}
+@media (max-width:960px){.aside{position:static}}
+.kv{display:grid;gap:2px}
+.kv .k{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.kv .v{font:700 24px/1.1 var(--display);font-variation-settings:"wdth" 108;font-variant-numeric:tabular-nums}
+.kv .s{font-size:12.5px;color:var(--muted)}
+.fixes{display:grid;gap:10px}
+.fix{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.fix > div{padding:10px 12px;font-size:13.5px}
+.fix > div:first-child{border-right:1px solid var(--line)}
+.fix .h{font:500 10.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+@media (max-width:620px){.fix{grid-template-columns:minmax(0,1fr)}.fix > div:first-child{border-right:0;border-bottom:1px solid var(--line)}}
+.callout{border-left:3px solid var(--accent);padding:4px 0 4px 14px;font-size:14.5px;max-width:70ch}
+
+/* principles */
+.princ{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-top:1px solid var(--ink)}
+@media (max-width:760px){.princ{grid-template-columns:minmax(0,1fr)}}
+.pr{padding:18px 20px 20px 0;border-bottom:1px solid var(--line);display:grid;gap:8px;min-width:0}
+.pr:nth-child(even){padding-left:20px;padding-right:0;border-left:1px solid var(--line)}
+@media (max-width:760px){.pr:nth-child(even){padding-left:0;border-left:0}}
+.pr .pn{font:500 12px var(--mono);color:var(--muted)}
+.pr h3{font-size:19px}
+.pr p{font-size:14.5px}
+.pr .ev{font-size:13px;color:var(--muted)}
+.pr .ev b{color:var(--ink);font-weight:600}
+.client{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:14px}
+.client .tag{justify-self:start}
+.ctable-wrap{overflow-x:auto}
+table.ct{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+.ct th{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink)}
+.ct td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.ct td:first-child{font-weight:600}
+
+footer{border-top:1px solid var(--line);padding-block:20px 40px;color:var(--muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Working notes · updated 19 Oct 2026</div>
+    <div class="title-row">
+      <h1>Alex Newton's<br>AI rig</h1>
+      <div class="who">Data strategy &amp; operations<br>Philadelphia<br><a href="https://www.linkedin.com/in/anewt">linkedin.com/in/anewt</a> · <a href="https://github.com/anewt225">github.com/anewt225</a></div>
+    </div>
+    <p class="lede">I run my week on a small system of Claude agents, plugins and Python jobs. It started as a paper notebook: a Sunday retro and a three-line morning plan. This page maps how that routine is now wired, <b>down to the step files, ledgers and exit codes</b>, and shows where I let a model make a call and where I keep the math in code.</p>
+    <div class="stats" aria-label="System at a glance">
+      <div class="stat"><div class="n">3</div><div class="l">scheduled agents, chained through dated files</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">custom plugins: 11 skills, 29 commands, versioned in git</div></div>
+      <div class="stat"><div class="n">25</div><div class="l">tools in a custom TickTick MCP server (Python)</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">Python scripts on 4 Windows tasks feeding a weekly Parquet store</div></div>
+      <div class="stat"><div class="n">113</div><div class="l">agent-written reports on file: 52 daily syncs, 31 briefs, 30 reviews</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="bar" aria-label="Views">
+  <div class="wrap">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-architecture" aria-controls="architecture" aria-selected="true">Architecture</button>
+      <button class="tab" role="tab" id="tab-deepdives" aria-controls="deepdives" aria-selected="false">Deep dives</button>
+      <button class="tab" role="tab" id="tab-inventory" aria-controls="inventory" aria-selected="false">Inventory</button>
+      <button class="tab" role="tab" id="tab-principles" aria-controls="principles" aria-selected="false">Principles</button>
+    </div>
+    <div class="legend" aria-label="Who does the work">
+      <span><i class="sw det"></i>Python, deterministic</span>
+      <span><i class="sw llm"></i>Claude, judgment</span>
+      <span><i class="sw hyb"></i>Hybrid</span>
+      <span><i class="sw hum"></i>Me</span>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ARCHITECTURE -->
+  <section class="view" id="architecture" role="tabpanel" aria-labelledby="tab-architecture">
+    <p class="view-intro"><b>Select any part</b> to see what it does, how it is built and what keeps it safe. Its inputs and outputs light up across the map.</p>
+    <div class="arch">
+      <div class="layers" id="layers"></div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+
+    <div class="sched">
+      <div class="sched-head">
+        <h3>A week of runs</h3>
+        <p>Agents never call each other. Each run writes a dated file, and the next run checks for that file before it starts. That keeps every hand-off inspectable and lets any step be re-run alone.</p>
+      </div>
+      <div class="runs-scroll"><div class="runs" id="runs"></div></div>
+    </div>
+  </section>
+
+  <!-- DEEP DIVES -->
+  <section class="view" id="deepdives" role="tabpanel" aria-labelledby="tab-deepdives" hidden>
+    <p class="view-intro">Four builds, written up the way I would hand them to a client team: <b>the problem, the design, the actual steps, what broke, and what I would change.</b></p>
+    <div class="dd-nav" id="ddnav" role="tablist" aria-label="Deep dives"></div>
+    <div id="ddbody"></div>
+  </section>
+
+  <!-- INVENTORY -->
+  <section class="view" id="inventory" role="tabpanel" aria-labelledby="tab-inventory" hidden>
+    <p class="view-intro">Everything in the system, filterable. Engine shows <b>who does the work</b>: a script, the model, both, or me.</p>
+    <div class="filters">
+      <div class="fgroup" id="f-type"><span class="lab">Type</span></div>
+      <div class="fgroup" id="f-domain"><span class="lab">Domain</span></div>
+      <div class="fgroup" id="f-engine"><span class="lab">Engine</span></div>
+      <label class="sr" for="q" style="position:absolute;left:-9999px">Search inventory</label>
+      <input class="search" id="q" type="search" placeholder="Search: Notion, Parquet, OCR…">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="inv" id="inv"></div>
+  </section>
+
+  <!-- PRINCIPLES -->
+  <section class="view" id="principles" role="tabpanel" aria-labelledby="tab-principles" hidden>
+    <p class="view-intro">The rules I build by. Each was learned on this system and each one carries over to a client deployment. <b>Evidence</b> points to where the rule lives in the build.</p>
+    <div class="princ" id="princ"></div>
+
+    <div class="client">
+      <span class="chip plain tag">Design sketch, not built</span>
+      <h2>Applying the rig to a client: a five-store ice cream franchise</h2>
+      <p style="max-width:72ch">A franchisee asked for help with inventory planning, staff training and POS data. Managers were spending their analysis time collecting data. Here is how I would deploy the same patterns, starting with the decision each KPI drives and the source that owns it.</p>
+      <div class="ctable-wrap">
+        <table class="ct">
+          <thead><tr><th>KPI or task</th><th>Source of truth</th><th>Who does the work</th><th>Guardrail</th></tr></thead>
+          <tbody>
+            <tr><td>Net sales and sales mix per store</td><td>POS export</td><td><span class="chip det">Python</span> nightly pull, reconcile to franchisor report</td><td>Mismatch over 1% flags the store; never auto-corrects</td></tr>
+            <tr><td>Bucket inventory (8 gal tubs)</td><td>Manager photo count</td><td><span class="chip llm">Claude</span> estimates fill % from photos; manager confirms</td><td>Tolerance band of ±10%; a manager tap is the record</td></tr>
+            <tr><td>Reorder quantities</td><td>Inventory × sales velocity</td><td><span class="chip det">Python</span> par-level formula</td><td>The formula is in code and visible; the model never sets order sizes</td></tr>
+            <tr><td>Training completion</td><td>Training platform</td><td><span class="chip det">Python</span> sync to one tracker</td><td>One owner per field, same as my systems-of-record table</td></tr>
+            <tr><td>Monday manager brief</td><td>All of the above</td><td><span class="chip llm">Claude</span> writes the narrative and top 3 actions per store</td><td>Read-only on Sunday night; proposals, never sends to staff</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Compiled from the system's own config files, run logs and repos with Claude Code, 19 Oct 2026. Personal finance and household workflows are described by method only.</span>
+    <span class="mono">v1.0</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+const E = {det:"Python, deterministic", llm:"Claude, judgment", hyb:"Hybrid", hum:"Me"};
+
+/* ---------- ARCHITECTURE ---------- */
+const LAYERS = [
+  {id:"src", name:"Sources", n:"01"},
+  {id:"con", name:"Connect", n:"02"},
+  {id:"orc", name:"Orchestrate", n:"03"},
+  {id:"sta", name:"State", n:"04"},
+  {id:"out", name:"Outputs", n:"05"},
+];
+const N = [
+  // sources
+  {id:"gmail", l:"src", e:"det", nm:"Gmail", sb:"Job-search threads, sent mail", to:["mcp"],
+   what:"Email is where conversations happen, so it drives the daily delta.",
+   how:["Scoped query: <code>interview OR application OR follow-up OR networking … after:[last sync]</code>","Newsletters, digests and automated mail are filtered out before anything is logged"],
+   guard:["Read-only for scheduled runs, except drafts. Nothing is ever sent unattended."]},
+  {id:"cal", l:"src", e:"det", nm:"Google Calendar", sb:"Today + 7 days; last week, bucketed", to:["mcp"],
+   what:"Planned time. The weekly review compares it to measured on-device time.",
+   how:["Events bucketed into time-alignment categories for the review","Today and the next 7 days feed the daily quiet-day check"], guard:["The morning brief proposes time blocks; it does not create events."]},
+  {id:"notion-src", l:"src", e:"det", nm:"Notion", sb:"Tasks, contacts, opportunities", to:["mcp"],
+   what:"The structured system of record for the job search. Read as a source and written as state.",
+   how:["Delta read of the tasks database since last sync","Lookups against Contacts, Companies, Opportunities and Sprints for linking"], guard:["Automations link to existing contacts only and never create them."]},
+  {id:"ff", l:"src", e:"det", nm:"Fireflies", sb:"Meeting transcripts", to:["mcp"],
+   what:"Transcripts and action items from calls feed interview debriefs and the weekly scorecard.",
+   how:["A conversation only counts as held with evidence, such as a transcript or a held calendar event"], guard:["Recording is announced at the start of each call."]},
+  {id:"tt", l:"src", e:"det", nm:"TickTick", sb:"Day-to-day tasks, focus, habits", to:["ttmcp"],
+   what:"Where tasks get done. Notion plans; TickTick executes.",
+   how:["Synced one way from Notion","Tasks are kept flat because subtasks do not survive the sync"], guard:["Discrepancies with Notion are flagged in the log, not silently fixed."]},
+  {id:"dev", l:"src", e:"det", nm:"Device activity", sb:"ActivityWatch, 3 browsers, event logs, 2 phones", to:["exp"],
+   what:"Where my time actually went, across a laptop and two phones.",
+   how:["ActivityWatch per-app active time (idle excluded)","Chrome, Vivaldi and Brave history (SQLite)","Windows System and Security logs","Phone exports from StayFree, dropped into an inbox folder"], guard:["Categories are regex rules in one JSON file, dry-run against every domain before a change ships."]},
+  {id:"journal", l:"src", e:"hum", nm:"Paper journal", sb:"Sunday retro, week-ahead spread", to:["plug"],
+   what:"The original system, and still the reflection step. I write; the agents gather.",
+   how:["<code>/weekly-rhythm:capture</code> reads a photo of the two-page spread and archives it as structured data"], guard:["The review ends by sending me to the notebook rather than writing my reflection for me."]},
+  {id:"other", l:"src", e:"det", nm:"Drive, Readwise, Hunter.io", sb:"Docs, highlights, new leads", to:["mcp"],
+   what:"Supporting sources: recently changed documents, book highlights for the daily mantra, and lead discovery.",
+   how:["Hunter.io only finds people not yet in Notion; once a lead is real it is created in Notion"], guard:["HubSpot stays connected as my own interface, but automations are barred from querying it because it mirrors Notion."]},
+
+  // connect
+  {id:"mcp", l:"con", e:"det", nm:"Hosted MCP connectors", sb:"Gmail, Calendar, Drive, Notion, Fireflies, Readwise, Hunter", to:["sync","brief","review","plug"],
+   what:"Standard connectors give every agent the same typed tools to read and write each service.",
+   how:["Each scheduled task names the exact queries and collections it may touch","Writes are limited to the actions its task file lists"], guard:["The task files state it outright: when in doubt, report instead of acting."]},
+  {id:"ttmcp", l:"con", e:"det", nm:"TickTick MCP server", sb:"Custom, Python, 25 tools", to:["sync","plug"],
+   what:"TickTick had no connector, so I built one on an open-source client for its v2 API.",
+   how:["~1,100 lines of Python, bundled inside the ticktick-productivity plugin","Tasks, focus sessions and habit check-ins exposed as tools","OAuth2 via a <code>/auth</code> command"], guard:["Client ID and secret come from environment variables, never from the synced plugin folder."]},
+  {id:"exp", l:"con", e:"det", nm:"Windows exporters", sb:"4 scheduled tasks, 8 scripts", to:["pq"],
+   what:"Plain Python on Task Scheduler. No model involved; these produce numbers that must be right.",
+   how:["Sunday 12:00: browser, Windows and ActivityWatch exports to dated Parquet","Sunday 12:20: phone and Claude-session imports, then the summary and the dashboard","Dedicated venv outside OneDrive so sync cannot corrupt it"], guard:["Launchers return the real exit code and log a recovery command when the interpreter is missing."]},
+
+  // orchestrate
+  {id:"sync", l:"orc", e:"hyb", nm:"productivity-sync", sb:"Daily 7:07 · scheduled agent", to:["mem","ledg","ndb","top3"],
+   what:"Pulls only what changed since yesterday, updates memory with surgical edits, logs email to Notion and ranks today's top 3.",
+   how:["A numbered step file, run unattended","Quiet-day early exit after two cheap checks (Gmail and Calendar)","Dedupe through a local ledger before any Notion search","Retention: demote to topic files, never delete"], guard:["First action must be a tool call; a greeting counts as a failed run.","Never reads the full log; tail only."], dd:"loop"},
+  {id:"brief", l:"orc", e:"llm", nm:"morning-brief", sb:"Weekdays 8:00 · scheduled agent", to:["bhtml","drafts"],
+   what:"Turns the sync into a one-page brief: top 3, one deep-work block, a time-blocked day and one outreach draft.",
+   how:["Waits for today's sync file: up to three 5-minute checks, then falls back to the latest and labels its date","Checks Sent and Drafts before drafting so the same person never gets two"], guard:["Runs while I am away, so every suggestion is rendered as a proposal. It drafts and never sends."], dd:"loop"},
+  {id:"review", l:"orc", e:"llm", nm:"weekly-review", sb:"Sunday 6:10 pm · scheduled agent", to:["rev","ndb"],
+   what:"Builds the Sunday digest: a conversations-first scorecard, planned vs actual time, open loops and an honest assessment.",
+   how:["Reads the precomputed usage summary and interprets it; it does not recompute","Compares against prior reviews for completion rate and recurring open loops","Writes narrative markdown and a JSON twin for trends"], guard:["Missing figures are written as <code>null</code> or \"unknown\", never 0 and never a guess."], dd:"usage"},
+  {id:"plug", l:"orc", e:"hyb", nm:"Plugins on demand", sb:"Job search, weekly rhythm, TickTick, finance", to:["ndb","drafts"],
+   what:"The commands I run by hand: tailor a resume, prep or debrief an interview, plan the week, check in mid-week.",
+   how:["Skills fire when a request matches their description; commands are invoked by name","Frameworks live once, inside the plugin, and are read at run time","Rubrics score before and after a rewrite so changes are measured"], guard:["Target role is a parameter; nothing is hard-coded to one job."]},
+  {id:"cc", l:"orc", e:"hum", nm:"Claude Code", sb:"Where I build and debug the rig", to:["mkt","exp"],
+   what:"I design and review; the coding agent writes, refactors and tests. Every fix in the deep dives was diagnosed here.",
+   how:["Plugin source edited in git, then version bumped and pushed","Pipeline scripts verified against real data before a change ships"], guard:["Destructive changes need my sign-off. Facts written into memory carry how and when they were verified."]},
+
+  // state
+  {id:"mem", l:"sta", e:"hyb", nm:"CLAUDE.md + memory/", sb:"Current state + topic files", to:["brief","plug"],
+   what:"Two-tier memory: one short current-state file every session loads, plus people, project and context files for history.",
+   how:["Edited surgically, never rebuilt","Kept under ~200 lines because long instruction files are followed less reliably","Closed items move to topic files and a dated snapshot; pointers stay behind"], guard:["Six logged incidents where an undated claim was treated as fact. Every fact now records how and when it was verified."], dd:"sor"},
+  {id:"ledg", l:"sta", e:"det", nm:"Ledgers", sb:"synced-threads.txt, last-weekly-incorporated.txt", to:["sync"],
+   what:"Plain text files that make the agent idempotent and cheap.",
+   how:["One Gmail thread ID per line: if it is listed, skip it with no Notion search","One filename per line for weekly files already folded in"], guard:["If a ledger is missing, the agent rebuilds it from Notion and says so."], dd:"loop"},
+  {id:"ndb", l:"sta", e:"det", nm:"Notion databases", sb:"Communications, Contacts, Opportunities, Sprints…", to:["sync","out-metrics"],
+   what:"The system of record. When Notion and another tool disagree, Notion wins.",
+   how:["Each logged email links to its contact, company, opportunity and current sprint","Sprint rollups count outreach automatically"], guard:["Never duplicate a contact or company; unmatched names are flagged for me to link."], dd:"sor"},
+  {id:"pq", l:"sta", e:"det", nm:"Parquet store", sb:"Weekly snapshots + 2 KB summary", to:["review","dash"],
+   what:"Dated, non-overwriting weekly files, plus a small precomputed summary the review agent reads instead of raw data.",
+   how:["Rollups, session tables and week-over-week deltas computed in pandas","Sources flagged STALE or MISSING with their actual coverage dates"], guard:["The summary waits up to 20 minutes for that day's exports instead of reading last week's."], dd:"usage"},
+  {id:"mkt", l:"sta", e:"det", nm:"Plugin marketplace", sb:"Private git repo, versioned", to:["plug"],
+   what:"Gives the plugins an update channel: push a commit, click Update.",
+   how:["The version lives only in each <code>plugin.json</code>","No version bump means no update reaches the installed copy"], guard:["Commits are signed; secrets never enter the repo."]},
+
+  // outputs
+  {id:"top3", l:"out", e:"llm", nm:"Top 3 standup", sb:"Daily file + CLAUDE.md block", to:["brief"],
+   what:"Three verb-first actions with a reason each, plus what moved yesterday and what is blocked.",
+   how:["Ranked: overdue follow-ups, then replies owed, then deadlines within 48 hours","Tie-break favors conversations over applications","The same item three days running gets a STALLED prefix"], guard:["Never three application tasks; the weakest is swapped for an outreach action."], dd:"loop"},
+  {id:"bhtml", l:"out", e:"llm", nm:"Morning brief", sb:"HTML page, weekdays", to:[],
+   what:"One page to read with coffee. Each section is a proposal I accept, edit or ignore.", how:["Ends with a short action-oriented line backed by a quote from my reading highlights"], guard:["Saved locally; nothing leaves the machine."]},
+  {id:"drafts", l:"out", e:"llm", nm:"Gmail drafts", sb:"Outreach and thank-yous", to:[],
+   what:"Ready-to-send drafts written in a known format, waiting for me.", how:["Checked against Sent and Drafts to avoid duplicates"], guard:["Draft only. Sending is always my click."]},
+  {id:"rev", l:"out", e:"llm", nm:"Weekly review + plan", sb:"Markdown, JSON, Notion row", to:["sync"],
+   what:"The Sunday digest, its machine-readable twin, and the week-ahead plan made after my handwritten reflection.",
+   how:["The daily sync picks up a new review the next morning and overwrites any advice it corrects"], guard:["Corrections replace stale advice rather than sitting beside it."]},
+  {id:"dash", l:"out", e:"det", nm:"Usage dashboard", sb:"Self-contained HTML, rebuilt weekly", to:[],
+   what:"Daily category bars, hour-of-day heatmap, per-app and per-site tables and a phone view, from every historical snapshot.",
+   how:["One file, no dependencies, opens by double-click","Overlapping weekly windows deduped, newest wins"], guard:["A discreet mode masks personal categories for screen sharing."], dd:"usage"},
+  {id:"out-metrics", l:"out", e:"det", nm:"Sprint metrics", sb:"Outreach counts in Notion", to:[],
+   what:"Two-week sprints that count outreach and conversations automatically from the logged emails.",
+   how:["Relations from each communication to its sprint drive the rollups"], guard:["The primary metric is conversations held, with a weekly target of 5. Applications are capped."]},
+];
+const byId = Object.fromEntries(N.map(n => [n.id, n]));
+N.forEach(n => n.from = []);
+N.forEach(n => n.to.forEach(t => byId[t] && byId[t].from.push(n.id)));
+
+const layersEl = document.getElementById("layers");
+const panel = document.getElementById("panel");
+LAYERS.forEach(L => {
+  const col = document.createElement("div");
+  col.className = "layer";
+  col.innerHTML = `<div class="layer-h"><span>${L.name}</span><i>${L.n}</i></div>`;
+  N.filter(n => n.l === L.id).forEach(n => {
+    const b = document.createElement("button");
+    b.className = `node ${n.e}`;
+    b.id = "n-" + n.id;
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `<div class="nm">${n.nm}</div><div class="sb">${n.sb}</div><div class="dir u">Feeds the selection</div><div class="dir d">Fed by the selection</div>`;
+    b.addEventListener("click", () => select(n.id));
+    col.appendChild(b);
+  });
+  layersEl.appendChild(col);
+});
+
+const DDNAME = {loop:"The daily ops loop", usage:"The usage pipeline", sor:"Systems of record", pano:"Panorama automation"};
+function list(a){ return `<ul>${a.map(x => `<li>${x}</li>`).join("")}</ul>`; }
+function select(id){
+  const n = byId[id];
+  document.querySelectorAll(".node").forEach(el => { el.classList.remove("on","up","down"); el.setAttribute("aria-pressed","false"); });
+  layersEl.classList.add("focus");
+  const me = document.getElementById("n-" + id);
+  me.classList.add("on"); me.setAttribute("aria-pressed","true");
+  n.from.forEach(f => document.getElementById("n-" + f).classList.add("up"));
+  n.to.forEach(t => document.getElementById("n-" + t)?.classList.add("down"));
+  const ins = n.from.map(f => byId[f].nm).join(", ") || "None";
+  const outs = n.to.map(t => byId[t].nm).join(", ") || "None, this is an end point";
+  panel.innerHTML = `
+    <div class="kind"><span class="chip ${n.e}">${E[n.e]}</span><span class="chip plain">${LAYERS.find(l => l.id === n.l).name}</span></div>
+    <h3>${n.nm}</h3>
+    <p>${n.what}</p>
+    <h4>How it's built</h4>${list(n.how)}
+    <h4>Guardrails</h4>${list(n.guard)}
+    <h4>Wiring</h4>
+    <p class="hint"><b style="color:var(--ink);font-weight:600">In:</b> ${ins}<br><b style="color:var(--ink);font-weight:600">Out:</b> ${outs}</p>
+    ${n.dd ? `<p><a href="#deepdives" data-dd="${n.dd}">Read the deep dive: ${DDNAME[n.dd]} →</a></p>` : ""}`;
+  panel.querySelector("[data-dd]")?.addEventListener("click", e => { e.preventDefault(); showTab("deepdives"); showDD(e.currentTarget.dataset.dd); });
+}
+function idlePanel(){
+  panel.innerHTML = `
+    <div class="kind"><span class="chip plain">How to read this</span></div>
+    <h3>Five layers, one direction</h3>
+    <p>Data comes in from the tools I already use. Connectors and scripts make it readable. Scheduled agents and plugins do the work. Results land in files and Notion, which the next run reads first.</p>
+    <h4>Start here</h4>
+    <ul><li><a href="#" data-n="sync">productivity-sync</a>: the daily agent and its 10 steps</li><li><a href="#" data-n="pq">Parquet store</a>: where Python does the math so the model doesn't</li><li><a href="#" data-n="ttmcp">TickTick MCP server</a>: the connector I had to build</li></ul>`;
+  panel.querySelectorAll("[data-n]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); select(a.dataset.n); document.getElementById("n-"+a.dataset.n).focus(); }));
+}
+idlePanel();
+
+const RUNS = [
+  {e:"det", when:"Sun 12:00", what:"Usage exports", how:"3 tasks write 7 days of browser, Windows and ActivityWatch data to Parquet"},
+  {e:"det", when:"Sun 12:20", what:"Summary precompute", how:"Imports phone and session data; rollups and deltas into a 2 KB summary; dashboard rebuilt"},
+  {e:"llm", when:"Sun 6:10 pm", what:"weekly-review", how:"Scorecard, planned vs actual time, open loops, honest assessment"},
+  {e:"hum", when:"Sun evening", what:"Handwritten reflection", how:"Notebook spread, guided by 3–5 prompts the data surfaced"},
+  {e:"hyb", when:"Sun or Mon", what:"/weekly-rhythm:plan", how:"Top 5 priorities, secondary goals and dated commitments for the week"},
+  {e:"hyb", when:"Daily 7:07", what:"productivity-sync", how:"Delta pull, Notion logging, memory edits, top 3 standup"},
+  {e:"llm", when:"Weekdays 8:00", what:"morning-brief", how:"Waits for the sync file, then renders the day as proposals"},
+  {e:"hyb", when:"Wed", what:"/weekly-rhythm:pulse", how:"Mid-week check of priorities against progress"},
+];
+document.getElementById("runs").innerHTML = RUNS.map((r,i) => `
+  <div class="run ${r.e}"><div class="dot" aria-hidden="true">${i+1}</div>
+  <div class="when">${r.when}</div><div class="what">${r.what}</div><div class="how">${r.how}</div></div>`).join("");
+
+/* ---------- DEEP DIVES ---------- */
+const DD = {
+loop:{
+  t:"The daily ops loop",
+  lede:"Every morning used to start with clicking through six tools to remember what happened yesterday. Now three agents hand off through dated files, and I start the day reading one page.",
+  problem:["Notes, tasks, email, meetings and contacts lived in six tools that did not talk to each other","Most of the review time went to collecting data, leaving little for deciding","Earlier versions re-read everything every day, which was slow and expensive"],
+  steps:[
+    ["0","<b>Mount the state folder.</b> Stop and report if it fails.","det"],
+    ["1","<b>Cheap state read.</b> Current-state file and the two ledgers only. Not the full memory tree.","det"],
+    ["1.5","<b>Quiet-day check.</b> Gmail, Calendar and a filename check for a new weekly review. If nothing is actionable, write a short log entry, refresh the top 3 and stop.","hyb"],
+    ["2","<b>Delta pull.</b> Notion tasks, TickTick, Drive changes since the last sync. TickTick and Notion differences are flagged.","det"],
+    ["2.5","<b>Log email to Notion.</b> Skip any thread ID already in the ledger. Classify the type from the body, link contact, company, opportunity and sprint, then append the ID.","hyb"],
+    ["2.6","<b>Fold in the weekly review.</b> Where the review says standing advice is wrong, overwrite it rather than adding beside it.","llm"],
+    ["3","<b>Surgical memory edits.</b> Change only the rows with new information. Then demote closed items to topic files and a dated snapshot, leaving pointers.","hyb"],
+    ["3.5","<b>Rank the top 3.</b> Overdue follow-ups, replies owed, then deadlines within 48 hours. Conversations win ties. Stalled items get flagged.","llm"],
+    ["4","<b>Append the log, rotate at 30 days.</b> Older entries move to monthly archive files. Nothing is deleted.","det"],
+    ["4.5","<b>Write the dated daily file.</b> The morning brief looks for exactly this file.","det"],
+  ],
+  fixes:[
+    ["The agent greeted an empty room and waited, so the run produced nothing","First output must be a tool call; a text-only first turn is defined as a failed run"],
+    ["Reading the whole append-only log cost tens of thousands of tokens before any work","Read the tail (~14 days) only; grep monthly archives when history is needed"],
+    ["Searching Notion to dedupe every thread was slow","Local ledger of thread IDs; Notion search only if the ledger is missing"],
+    ["A weekly review finished Monday at noon was missed when the morning was quiet","Filename freshness check runs every day, including quiet days"],
+    ["An old application task held the #1 slot for weeks just by aging","Conversations-first tie-break, three-day stall flag, and a cap on application tasks"],
+  ],
+  kv:[["52","daily sync files","since 20 Jul 2026"],["31","morning briefs","since 23 Jul 2026"],["0","messages sent unattended","drafts only, by design"]],
+  next:["Move the top 3 ranking into a scored function in code, with the model writing only the reason for each pick","Back-test that function against the 52 saved days as an eval set","Add a run-health line to the brief so a skipped sync is visible at a glance"],
+  tools:["Claude scheduled tasks","Notion MCP","Gmail MCP","Calendar MCP","TickTick MCP (custom)","Markdown files"]
+},
+usage:{
+  t:"The usage pipeline",
+  lede:"To answer \"where did my time go\" honestly, Python computes and Claude interprets. The review agent reads a 2 KB summary instead of raw logs, so the numbers in my review cannot be made up.",
+  problem:["Time was spread across a laptop, three browsers and two phones, with each tracker counting differently","Early reviews had the model re-parse raw event logs and browser databases every week: slow, expensive and impossible to audit","I need the same numbers every time I ask the same question"],
+  steps:[
+    ["12:00","<b>Three exports run.</b> Browser history (copied from locked SQLite), Windows logon and session events, and ActivityWatch active time per app, per site and per hour.","det"],
+    ["12:20","<b>Imports.</b> Phone usage from StayFree exports dropped in an inbox folder, and Claude session titles from local logs for topic attribution.","det"],
+    ["12:20","<b>Summary.</b> Category hours, session tables, browser split and week-over-week deltas into a small markdown and JSON file.","det"],
+    ["12:20","<b>Dashboard.</b> Every historical snapshot, deduped, into one self-contained HTML page.","det"],
+    ["18:10","<b>Interpretation.</b> The weekly review reads the summary and writes observations, cross-source checks and at most five insights.","llm"],
+  ],
+  fixes:[
+    ["The laptop is asleep at noon, so all four tasks fire together at login. The elevated export deadlocked on every catch-up run","Run unelevated with log-reader group membership and a 2-hour limit"],
+    ["ActivityWatch's server starts about 90 seconds after login, so the export raced it","Retry 10 times at 30-second intervals"],
+    ["The summary raced the exports and labeled three-day-old data as OK","Poll up to 20 minutes for today's files; flag each source STALE or MISSING with its coverage dates"],
+    ["Uninstalling a Python version broke every run, yet Task Scheduler reported success","Dedicated venv, a guard that logs the recreate command, and the real exit code passed through"],
+    ["Claude session time showed 586% of measured app time","Session length was first-to-last message, not active time. The summary now reports topic split only and says so"],
+  ],
+  kv:[["8","Python scripts","on 4 scheduled tasks"],["69%","of screen time was on phones","found by reconciling exports"],["±1–2 h","tracker agreement","desktop StayFree vs ActivityWatch"]],
+  next:["Let the review propose new category rules from each week's uncategorized domains, with a dry-run diff for me to approve","Add sleep and activity sources (wearables) through the same inbox-importer pattern","Pick one source of truth per metric, e.g. sleep from the ring and steps from the run tracker, and record why"],
+  tools:["Python 3.14 + uv","pandas, pyarrow","SQLite","ActivityWatch REST API","Windows Task Scheduler","Static HTML"]
+},
+sor:{
+  t:"Systems of record",
+  lede:"Agents are only as good as the facts they read. I keep one owner for every kind of data, and I treat my own memory files as data that can go stale.",
+  problem:["The same contact lived in Notion, HubSpot, TickTick and Gmail and drifted apart","An automation that read the HubSpot mirror produced stale contact details","Confident notes in memory files were read later as fact, by me and by agents"],
+  table:[
+    ["Applications, interviews, contacts","Notion","Automations read and write here. Notion wins any disagreement."],
+    ["New-lead discovery","Hunter.io","Read-only. A real lead gets created in Notion."],
+    ["Contact UI","HubSpot","My interface only. Automations are barred from querying a mirror."],
+    ["Day-to-day tasks","TickTick","Synced from Notion, kept flat so tasks survive the sync."],
+    ["Transcripts","Fireflies","Pulled by the interview debrief."],
+    ["Frameworks and rubrics","The plugin","Defined once and read at run time; never re-derived per run."],
+  ],
+  incidents:[
+    ["A plugin version that never existed","Nearly shipped a release with a colliding version number"],
+    ["A \"best-built\" interview-story database","Every Challenge, Result and Priority field was empty, which undid a planned re-ranking"],
+    ["Two cloud folders described as mirrored","Files were consolidated into a location nobody had confirmed"],
+    ["A folder described as unreadable","Blocked an audit for several turns; true in one tool, false in the other"],
+  ],
+  kv:[["6","logged memory incidents","each with what it cost"],["1","owner per data type","written in a table every agent loads"]],
+  next:["Have the coding agent check memory claims against the live system on a schedule and flag ones that have drifted","Give the interview-story database its first real consumer, so prep reads stories instead of re-deriving them"],
+  tools:["Notion","CLAUDE.md","Markdown memory files","Claude Code"]
+},
+pano:{
+  t:"Panorama automation",
+  lede:"A travel photo library with wrong clocks, no GPS and 38 handheld panorama bursts. I directed a coding agent through the mechanics and kept the quality calls for myself.",
+  problem:["The camera clock was set seven hours off, so every timestamp was wrong","The camera has no GPS","Each panorama is 8 to 30 raw frames, slow to align and stitch by hand"],
+  steps:[
+    ["1","<b>Time repair.</b> ExifTool shifts every capture time across EXIF, XMP and IPTC and stamps the real time zone. Guarded to one camera make, idempotent and reversible.","det"],
+    ["2","<b>Geotag.</b> A GPX track built from phone photos, time-matched to camera photos in UTC.","det"],
+    ["3","<b>Fill gaps.</b> Location history where the phone had no signal, then manual stamps from my notes for the rest.","hum"],
+    ["4","<b>Stitch.</b> Bursts auto-detected; raw developed with rawpy; stitched with Hugin; projection chosen per scene; GPS and date copied to the result.","det"],
+    ["5","<b>Review.</b> I checked all 36 results at full resolution and fixed or set aside the ones that failed.","hum"],
+  ],
+  fixes:[
+    ["The agent's tone-mapping shifted hue in bright skies","I switched it to luminance-preserving tone-mapping"],
+    ["Its default projection bowed the foreground on wide scenes","Projection now picked from measured field of view: rectilinear, cylindrical or Panini"],
+    ["11 stitches failed mid-run when cloud files weren't downloaded yet","Retry three times; the batch is idempotent so a re-run skips finished work"],
+  ],
+  kv:[["2,394","photos time-corrected","100% geotagged"],["36 / 38","bursts stitched","~35 usable after review"]],
+  next:["Put the agent's work in the repo history as issues and pull requests, so the oversight is visible in GitHub itself","Add a CI check that re-runs the pipeline on a small fixture set"],
+  tools:["ExifTool","Python + uv","rawpy","OpenCV","Hugin CLI"],
+  link:"https://github.com/anewt225/panorama-automation"
+}};
+const DDORDER = ["loop","usage","sor","pano"];
+const ddnav = document.getElementById("ddnav"), ddbody = document.getElementById("ddbody");
+ddnav.innerHTML = DDORDER.map(k => `<button class="pill" role="tab" data-k="${k}" aria-pressed="false">${DD[k].t}</button>`).join("");
+ddnav.querySelectorAll("button").forEach(b => b.addEventListener("click", () => showDD(b.dataset.k)));
+function showDD(k){
+  const d = DD[k];
+  ddnav.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
+  const steps = d.steps ? `<div><div class="sec-h">${k==="usage"?"Sunday, in order":"The steps, in order"}</div><ol class="steps">${d.steps.map(s => `<li><span class="sn">${s[0]}</span><span class="st">${s[1]}<span class="chip ${s[2]}">${E[s[2]]}</span></span></li>`).join("")}</ol></div>` : "";
+  const table = d.table ? `<div><div class="sec-h">Who owns what</div><div class="ctable-wrap"><table class="ct"><thead><tr><th>Data</th><th>Owner</th><th>Rule</th></tr></thead><tbody>${d.table.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+  const inc = d.incidents ? `<div><div class="sec-h">Memory incidents, logged with their cost</div><div class="fixes">${d.incidents.map(f => `<div class="fix"><div><div class="h">The claim</div>${f[0]}</div><div><div class="h">What it cost</div>${f[1]}</div></div>`).join("")}</div><p class="callout">Each one was a confident, undated, unattributed note. The fix is a habit, not a tool: every fact written to memory says how it was verified and when.</p></div>` : "";
+  const fixes = d.fixes ? `<div><div class="sec-h">${k==="pano"?"Where I overruled or fixed the agent":"What broke, and the fix"}</div><div class="fixes">${d.fixes.map(f => `<div class="fix"><div><div class="h">Symptom</div>${f[0]}</div><div><div class="h">Fix</div>${f[1]}</div></div>`).join("")}</div></div>` : "";
+  ddbody.innerHTML = `
+  <article class="dd">
+    <div class="dd-main">
+      <div><h2>${d.t}</h2><p class="lede2">${d.lede}</p></div>
+      <div><div class="sec-h">The problem</div>${list(d.problem)}</div>
+      ${steps}${table}${fixes}${inc}
+      <div><div class="sec-h">What I'd change next</div>${list(d.next)}</div>
+    </div>
+    <aside class="aside">
+      ${d.kv.map(x => `<div class="kv"><span class="k">${x[1]}</span><span class="v">${x[0]}</span><span class="s">${x[2]}</span></div>`).join("")}
+      <div class="kv"><span class="k">Stack</span><div class="meta" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${d.tools.map(t => `<span class="chip plain">${t}</span>`).join("")}</div></div>
+      ${d.link ? `<a href="${d.link}">Repo and case study →</a>` : ""}
+    </aside>
+  </article>`;
+}
+showDD("loop");
+
+/* ---------- INVENTORY ---------- */
+const INV = [
+  {nm:"job-search-assistant", type:"Plugin", dom:"Career", e:"hyb", st:"Live · v0.6.0", d:"4 skills and 13 commands: resume scoring and tailoring, a 100-point LinkedIn rubric with an advisory panel, interview prep and debrief, outreach drafts, daily priorities. Tracks everything in Notion."},
+  {nm:"weekly-rhythm", type:"Plugin", dom:"Productivity", e:"llm", st:"Live · v0.1.0", d:"Weekly review, week-ahead plan, daily briefing, mid-week pulse, journal capture from a notebook photo, and a source-coverage check."},
+  {nm:"ticktick-productivity", type:"Plugin", dom:"Productivity", e:"det", st:"Live · v0.2.0", d:"Bundles the custom TickTick MCP server. Adds task sync to markdown, focus sessions and habit metrics for retros."},
+  {nm:"Complex filing assistant", type:"Plugin", dom:"Finance", e:"hyb", st:"Live · v0.1.0", d:"5 skills for a multi-jurisdiction late filing: document triage, penalty and abatement estimates, rollover eligibility, payment-plan strategy. Deterministic math, model-assisted research. Described by method only."},
+  {nm:"Plugin marketplace", type:"Infrastructure", dom:"Dev", e:"det", st:"Live · private", d:"A git repo that serves all four plugins with versioned updates. Push, bump the version, click Update."},
+  {nm:"Job Search Assistant, shareable", type:"Plugin", dom:"Career", e:"hyb", st:"Packaging", d:"The plugin rebuilt for other people: 8 standalone skills, a setup wizard page, a Notion template and a build script that bundles shared files into each module."},
+  {nm:"productivity-sync", type:"Scheduled agent", dom:"Productivity", e:"hyb", st:"Live · daily 7:07", d:"Delta sync across Notion, Gmail, Calendar, TickTick and Drive into memory files and Notion, ending with a top 3 standup."},
+  {nm:"morning-brief", type:"Scheduled agent", dom:"Productivity", e:"llm", st:"Live · weekdays 8:00", d:"One-page brief from the sync: priorities, a deep-work block, a proposed time-blocked day and one outreach draft."},
+  {nm:"weekly-review", type:"Scheduled agent", dom:"Productivity", e:"llm", st:"Live · Sun 6:10 pm", d:"Conversations-first scorecard, planned vs actual time, open loops, trends against prior weeks, and reflection prompts."},
+  {nm:"BrowserUsageExport", type:"Windows task", dom:"Productivity", e:"det", st:"Live · Sun 12:00", d:"Copies locked Chrome, Vivaldi and Brave history databases and writes 7 days of visits to Parquet."},
+  {nm:"WindowsUsageExport", type:"Windows task", dom:"Productivity", e:"det", st:"Live · Sun 12:00", d:"System and Security event logs filtered to human logon types, for session availability."},
+  {nm:"ActivityWatchExport", type:"Windows task", dom:"Productivity", e:"det", st:"Live · Sun 12:00", d:"Active (non-idle) time per app, site and hour, plus titled focus blocks, from the local ActivityWatch API."},
+  {nm:"UsageSummaryExport", type:"Windows task", dom:"Productivity", e:"det", st:"Live · Sun 12:20", d:"Phone and Claude-session imports, the precomputed summary and the dashboard rebuild. Waits for fresh exports and flags stale ones."},
+  {nm:"TickTick MCP server", type:"MCP server", dom:"Productivity", e:"det", st:"Live · custom", d:"25 tools in about 1,100 lines of Python over the TickTick v2 API: tasks, projects, focus and habits, with OAuth2."},
+  {nm:"ActivityWatch MCP", type:"MCP server", dom:"Productivity", e:"det", st:"Live · built from source", d:"Open-source server built locally so Claude can query time data and manage categories directly."},
+  {nm:"Hosted connectors", type:"MCP server", dom:"All", e:"det", st:"Live", d:"Gmail, Google Calendar, Drive, Docs, Sheets, Notion, Fireflies, Readwise, Hunter.io and a personal CRM, each scoped by the task files that use them."},
+  {nm:"Desktop and browser control", type:"MCP server", dom:"Dev", e:"hyb", st:"Live", d:"Local shell and file tools, computer use and a built-in browser for apps that have no API."},
+  {nm:"Usage dashboard", type:"App", dom:"Productivity", e:"det", st:"Live · weekly", d:"Self-contained HTML: range presets, KPI tiles with deltas, drill-down by day and hour, phone view, and a discreet mode for screen sharing."},
+  {nm:"Tab", type:"App", dom:"Dev", e:"hyb", st:"Public repo", d:"Split a restaurant check from a photo. Claude reads the receipt; code refuses to continue until the items, tax and tip equal the printed total. Next.js, Postgres, Playwright and Vitest.", link:"https://github.com/anewt225/tab-replica"},
+  {nm:"Panorama automation", type:"App", dom:"Creative", e:"det", st:"Public repo", d:"Time repair and geotagging for 2,394 photos and batch stitching of 38 raw panorama bursts, built by directing a coding agent.", link:"https://github.com/anewt225/panorama-automation"},
+  {nm:"Baldwin audio walking tour", type:"App", dom:"Creative", e:"hyb", st:"Live site", d:"Offline phone tour with neural narration. The script is data; changing one stop re-renders only that stop's audio, keyed by a hash of its text.", link:"https://anewt225.github.io/baldwin-paris-audio-tour/"},
+  {nm:"Parachute: Prioritizing Grid", type:"App", dom:"Career", e:"det", st:"Live site", d:"Pairwise ranking tool with an express mode that uses transitivity to cut 45 comparisons to about 20.", link:"https://anewt225.github.io/parachute/"},
+  {nm:"Photo organizer", type:"App", dom:"Creative", e:"det", st:"2025", d:"Sorts a photo library by date taken using a priority order of EXIF, video metadata, filename and file dates, with duplicate detection and a dry run."},
+  {nm:"Personal finance check-in", type:"Skill", dom:"Finance", e:"hyb", st:"Live", d:"Turns statement exports into net worth, budget vs actual and runway, and keeps a running transaction ledger. A second, generalized version sets the same thing up for someone else."},
+  {nm:"Interview debrief", type:"Skill", dom:"Career", e:"llm", st:"Live", d:"Transcript in, assessment out: CAR, FIT and TIARA scoring, updates across four Notion databases and a drafted thank-you note."},
+  {nm:"Methodology files", type:"Pattern", dom:"Career", e:"hum", st:"Live · refreshed quarterly", d:"Research on a topic is aggregated once into a dated reference file that skills read at run time, instead of re-sweeping sources on every run."},
+  {nm:"Home network diagnostics", type:"Case", dom:"Household", e:"hyb", st:"Resolved", d:"Continuous loss monitoring and an evidence log for an ISP. After five failed technician visits, a public post with the data got a senior crew dispatched within a day. They found an unauthorized splitter. Packet loss went from 1.05% to 0.09%."},
+];
+const types = [...new Set(INV.map(i => i.type))];
+const doms = [...new Set(INV.map(i => i.dom))];
+const state = {type:"All", dom:"All", e:"All", q:""};
+function pills(elId, key, vals, labelFn){
+  const g = document.getElementById(elId);
+  ["All", ...vals].forEach(v => {
+    const b = document.createElement("button");
+    b.className = "pill"; b.type = "button"; b.textContent = labelFn ? labelFn(v) : v;
+    b.setAttribute("aria-pressed", String(v === "All"));
+    b.addEventListener("click", () => { state[key] = v; g.querySelectorAll(".pill").forEach(p => p.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); renderInv(); });
+    g.appendChild(b);
+  });
+}
+pills("f-type","type",types);
+pills("f-domain","dom",doms);
+pills("f-engine","e",["det","llm","hyb","hum"], v => v === "All" ? "All" : E[v]);
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.toLowerCase(); renderInv(); });
+function renderInv(){
+  const items = INV.filter(i => (state.type==="All"||i.type===state.type) && (state.dom==="All"||i.dom===state.dom) && (state.e==="All"||i.e===state.e) && (!state.q || (i.nm+" "+i.d+" "+i.type+" "+i.dom).toLowerCase().includes(state.q)));
+  document.getElementById("count").textContent = `${items.length} of ${INV.length}`;
+  document.getElementById("inv").innerHTML = items.length ? items.map(i => `
+    <div class="card">
+      <div class="top"><div class="nm">${i.nm}</div><span class="status ${i.st.startsWith("Live")?"live":""}">${i.st}</span></div>
+      <div class="meta"><span class="chip ${i.e}">${E[i.e]}</span><span class="chip plain">${i.type}</span><span class="chip plain">${i.dom}</span></div>
+      <p>${i.d}</p>
+      ${i.link ? `<a class="lnk" href="${i.link}">${i.link.replace("https://","")} →</a>` : ""}
+    </div>`).join("") : `<p class="empty">Nothing matches those filters. Clear the search or pick All.</p>`;
+}
+renderInv();
+
+/* ---------- PRINCIPLES ---------- */
+const PR = [
+  ["Write the workflow down before automating it","The rig is a paper routine made digital. Every agent started as a page in a notebook with the same headings, so I knew what good output looked like before a model produced any.","<b>Evidence:</b> the weekly review mirrors the notebook's two-page spread; <code>/capture</code> reads that spread back in."],
+  ["Keep the math in code and the judgment in the model","If a number has to be right, a script computes it and the model reads the result. The model gets the parts where tolerance is fine and context matters: ranking, wording, spotting patterns.","<b>Evidence:</b> the usage summary is computed in pandas; the receipt splitter won't proceed until the items, tax and tip add up to the total; panoramas are stitched by Hugin, not described by a model."],
+  ["One owner per kind of data","Every data type has a system of record, and automations never read a mirror. That one rule ended the contact drift.","<b>Evidence:</b> the systems-of-record table every agent loads; HubSpot stays my interface but is off-limits to automations."],
+  ["Run the cheap check first, and stop early","Most days are quiet. Two inexpensive checks decide whether the expensive work runs at all, and ledgers make each run skip what is already done.","<b>Evidence:</b> the quiet-day exit, the thread-ID ledger, and a log that is only ever read from the tail."],
+  ["Unattended means propose, never act","A scheduled run has nobody to ask, so it drafts and recommends. Anything outward-facing waits for my click.","<b>Evidence:</b> the morning brief renders every suggestion as an editable proposal and checks for duplicate drafts; its task file bars it from sending."],
+  ["Fail loudly","A job that fails silently is worse than no job at all. Exit codes, staleness flags and explicit nulls make missing data visible.","<b>Evidence:</b> launchers pass the real exit code; sources are flagged STALE or MISSING; unknown metrics are null, never 0."],
+  ["Memory is data, and it goes stale","Notes that agents read are inputs like any other. Undated claims caused six real incidents, so facts now carry how and when they were checked.","<b>Evidence:</b> the incident log, with what each one cost."],
+  ["Package it so someone else can run it","A workflow that only runs on my laptop isn't finished. Versioned plugins, modular skills and a setup wizard turn my setup into something a team can install.","<b>Evidence:</b> the private plugin marketplace and the shareable eight-module job search assistant."],
+];
+document.getElementById("princ").innerHTML = PR.map((p,i) => `
+  <div class="pr"><span class="pn">Rule ${i+1}</span><h3>${p[0]}</h3><p>${p[1]}</p><p class="ev">${p[2]}</p></div>`).join("");
+
+/* ---------- TABS ---------- */
+const TABS = ["architecture","deepdives","inventory","principles"];
+function showTab(id, push){
+  TABS.forEach(t => {
+    document.getElementById(t).hidden = t !== id;
+    document.getElementById("tab-"+t).setAttribute("aria-selected", String(t === id));
+  });
+  try { localStorage.setItem("rig-tab", id); } catch(e){}
+  if (push) { try { history.replaceState(null, "", "#"+id); } catch(e){} }
+}
+TABS.forEach(t => document.getElementById("tab-"+t).addEventListener("click", () => showTab(t, true)));
+const h = (location.hash || "").slice(1);
+let start = TABS.includes(h) ? h : null;
+if (!start && DD[h]) { start = "deepdives"; showDD(h); }
+if (!start) { try { start = localStorage.getItem("rig-tab"); } catch(e){} }
+showTab(TABS.includes(start) ? start : "architecture");
+})();
+</script>

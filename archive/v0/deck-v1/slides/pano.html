@@ -1,0 +1,24 @@
+<section id="pano" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Deep dive 4 · panorama automation</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Directing an agent, owning the decisions</h2>
+</div>
+<div style="display:flex;gap:56px;align-items:start">
+<div style="width:520px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:6px"><p style="font-family:'Archivo', Arial, sans-serif;font-size:88px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums">2,394</p><p style="font-size:26px;line-height:1.35;color:#4D5953">travel photos time-corrected and 100% geotagged</p></div>
+<div style="display:flex;flex-direction:column;gap:6px"><p style="font-family:'Archivo', Arial, sans-serif;font-size:88px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums">36 / 38</p><p style="font-size:26px;line-height:1.35;color:#4D5953">raw panorama bursts stitched in one batch; about 35 usable after my review</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<h3 style="font-size:32px;font-weight:600;line-height:1.2">Two calls I overruled</h3>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-left:6px solid #9A6A0C;padding:22px 26px">
+<p style="font-size:26px;line-height:1.35"><b>Tone-mapping.</b> The agent’s first develop shifted hue in bright skies. I switched it to luminance-preserving tone-mapping.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FBFCFA;border-left:6px solid #9A6A0C;padding:22px 26px">
+<p style="font-size:26px;line-height:1.35"><b>Projection.</b> Its default bowed the foreground on wide scenes. Projection is now chosen per scene from the measured field of view.</p>
+</div>
+<p style="font-size:24px;line-height:1.4;color:#4D5953">Stack: ExifTool, Python with uv, rawpy, OpenCV and the Hugin command line. Idempotent, with retries for cloud files that were not yet downloaded.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">github.com/anewt225/panorama-automation · case study and reflection in the repo</p>
+<aside>This one is about working with a coding agent the way an FDE works with a client’s tooling: delegate the mechanics, keep the judgment. The agent wrote the time repair, geotagging and batch stitching. I owned the quality bar. Twice its defaults were wrong in ways only visible at full resolution, and I changed the approach rather than accepting the output. I also reviewed all 36 results myself. The repo has a written reflection on exactly what I owned versus what the agent did.</aside>
+</section>

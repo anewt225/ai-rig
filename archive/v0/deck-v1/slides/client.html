@@ -1,0 +1,15 @@
+<section id="client" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Design sketch, not built</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Applying it to a five-store franchise</h2>
+</div>
+<p style="font-size:28px;line-height:1.4;width:1500px;color:#4D5953">Managers spent their analysis time collecting data. Start from the decision each KPI drives and the source that owns it.</p>
+<table style="font-size:24px;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
+<tr><th style="width:22%;text-align:left;color:#4D5953">KPI or task</th><th style="width:18%;text-align:left;color:#4D5953">Source of truth</th><th style="width:30%;text-align:left;color:#4D5953">Who does the work</th><th style="width:30%;text-align:left;color:#4D5953">Guardrail</th></tr>
+<tr><td>Sales and sales mix</td><td>POS export</td><td>Python: nightly pull, reconciled to the franchisor report</td><td>Mismatch flags the store; never auto-corrects</td></tr>
+<tr><td>Tub inventory</td><td>Manager photo</td><td>Claude estimates fill from the photo; the manager confirms</td><td>Tolerance band; the manager’s tap is the record</td></tr>
+<tr><td>Reorder quantities</td><td>Inventory × sales</td><td>Python: par-level formula</td><td>The model never sets order sizes</td></tr>
+<tr><td>Monday brief</td><td>All of the above</td><td>Claude writes the narrative and top 3 per store</td><td>Proposals only; nothing sent to staff</td></tr>
+</table>
+<aside>This answers the question I get most often: what would the back end look like for a real client, here a franchisee with five stores. Same patterns as my own system. First, agree the KPIs and which source owns each one, because the POS, the franchisor portal and the scheduling tool will all disagree. Then split the work: reconciliation and reorder math in code; the model where tolerance is acceptable, like estimating how full a tub is from a photo, and for the manager-facing narrative. A manager’s confirmation is the record, and the brief proposes rather than sends. I would pilot in one store for two weeks and measure time saved on inventory against the manager’s old process.</aside>
+</section>

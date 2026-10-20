@@ -1,0 +1,24 @@
+<section id="sor" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Deep dive 3 · systems of record</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">One owner for every kind of data</h2>
+</div>
+<div style="display:flex;gap:56px;align-items:start">
+<table style="flex:1;font-size:24px;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
+<tr><th style="width:34%;text-align:left;color:#4D5953">Data</th><th style="width:20%;text-align:left;color:#4D5953">Owner</th><th style="width:46%;text-align:left;color:#4D5953">Rule</th></tr>
+<tr><td>Applications, contacts</td><td>Notion</td><td>Wins every disagreement</td></tr>
+<tr><td>New-lead discovery</td><td>Hunter.io</td><td>Read-only; real leads go to Notion</td></tr>
+<tr><td>Contact UI</td><td>HubSpot</td><td>Mine only; automations never read a mirror</td></tr>
+<tr><td>Daily tasks</td><td>TickTick</td><td>Synced from Notion, kept flat</td></tr>
+<tr><td>Transcripts</td><td>Fireflies</td><td>Pulled by the interview debrief</td></tr>
+<tr><td>Frameworks, rubrics</td><td>The plugin</td><td>Defined once, read at run time</td></tr>
+</table>
+<div style="width:520px;display:flex;flex-direction:column;gap:20px;background:#17201C;color:#F1F3EF;padding:36px">
+<p style="font-family:'Archivo', Arial, sans-serif;font-size:96px;font-weight:800;line-height:1;color:#5BC3A4">6</p>
+<p style="font-size:28px;line-height:1.35">logged incidents where an undated note in memory was later read as fact</p>
+<p style="font-size:24px;line-height:1.4;color:#B9C4BE">One nearly shipped a plugin release under a version number that never existed. Another sent a task list to re-rank database fields that turned out to be empty.</p>
+<p style="font-size:24px;line-height:1.4;color:#F1F3EF"><b>The rule now:</b> every fact records how and when it was verified.</p>
+</div>
+</div>
+<aside>This is the source-of-truth conversation I had with a franchise owner, implemented on my own system. The same contact lived in four tools and drifted. The fix was a table every agent loads: one owner per data type, and automations are barred from reading a mirror, even one I still use as my own interface. The right-hand side is the less obvious lesson. My agents read notes I and they wrote earlier. Six times, a confident undated note was treated as fact. So memory gets the same discipline as data: every claim says how and when it was checked.</aside>
+</section>

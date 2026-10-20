@@ -1,20 +1,52 @@
 {
   "v": 4,
-  "createdOnFiles": {"v": 1, "at": "2026-10-19T20:25:00Z"},
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-19T20:25:00Z"
+  },
   "lists": "css",
   "title": "Alex Newton’s AI Rig",
   "cover": "eliza",
-  "order": ["eliza", "cover", "rhythm", "career", "money", "platform", "client"],
+  "order": [
+    "eliza",
+    "cover",
+    "rhythm",
+    "career",
+    "money",
+    "platform",
+    "client"
+  ],
   "sections": {
-    "s0": {"description": "Optional cover note for one recipient; remove it for anyone else", "start": "eliza"},
-    "s1": {"description": "What the system is, in one page", "start": "cover"},
-    "s2": {"description": "The three workflows, with triggers, inputs and outputs", "start": "rhythm"},
-    "s3": {"description": "What the workflows share, and how it carries over to a client", "start": "platform"}
+    "s0": {
+      "description": "Optional cover note for one recipient; remove it for anyone else",
+      "start": "eliza"
+    },
+    "s1": {
+      "description": "What the system is, in one page",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "The three workflows, with inputs, process and outputs",
+      "start": "rhythm"
+    },
+    "s3": {
+      "description": "What the workflows share, and how it carries over to a client",
+      "start": "platform"
+    }
   },
   "faces": {
-    "archivo": {"family": "Archivo", "href": "https://fonts.googleapis.com/css2?family=Archivo:wght@400..800&display=swap"},
-    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"},
-    "ibm-plex-mono": {"family": "IBM Plex Mono", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"}
+    "archivo": {
+      "family": "Archivo",
+      "href": "https://fonts.googleapis.com/css2?family=Archivo:wght@400..800&display=swap"
+    },
+    "ibm-plex-sans": {
+      "family": "IBM Plex Sans",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    },
+    "ibm-plex-mono": {
+      "family": "IBM Plex Mono",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+    }
   },
   "designSystems": []
 }

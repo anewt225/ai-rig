@@ -1,0 +1,36 @@
+<section id="loop" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Deep dive 1 · productivity-sync</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">The daily ops loop, step by step</h2>
+</div>
+<div style="display:flex;gap:56px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column;gap:0;border-top:1px solid #C9D0C7">
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">0</p><div style="width:14px;height:14px;background:#2D57A3"></div><p style="font-size:24px;line-height:1.3">Mount the state folder; stop and report if it fails</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">1</p><div style="width:14px;height:14px;background:#2D57A3"></div><p style="font-size:24px;line-height:1.3">Cheap read: the current-state file and two ledgers only</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">1.5</p><div style="width:14px;height:14px;background:#634A9A"></div><p style="font-size:24px;line-height:1.3"><b>Quiet day?</b> Nothing new in Gmail, Calendar or reviews: log it and stop</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">2</p><div style="width:14px;height:14px;background:#2D57A3"></div><p style="font-size:24px;line-height:1.3">Delta pull from Notion, TickTick and Drive since the last sync</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">2.5</p><div style="width:14px;height:14px;background:#634A9A"></div><p style="font-size:24px;line-height:1.3">Log email to Notion: <b>skip IDs in the ledger</b>, link contact and sprint</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">2.6</p><div style="width:14px;height:14px;background:#9E356D"></div><p style="font-size:24px;line-height:1.3">Fold in the weekly review; overwrite any advice it corrects</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">3</p><div style="width:14px;height:14px;background:#634A9A"></div><p style="font-size:24px;line-height:1.3">Surgical memory edits; demote closed items, never delete</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">3.5</p><div style="width:14px;height:14px;background:#9E356D"></div><p style="font-size:24px;line-height:1.3">Rank the top 3: overdue, then replies owed, then 48-hour deadlines</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">4</p><div style="width:14px;height:14px;background:#2D57A3"></div><p style="font-size:24px;line-height:1.3">Append to the log; rotate entries older than 30 days</p></div>
+<div style="display:flex;gap:20px;align-items:center;border-bottom:1px solid #C9D0C7;padding:9px 0">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953;width:64px">4.5</p><div style="width:14px;height:14px;background:#2D57A3"></div><p style="font-size:24px;line-height:1.3">Write the dated file the morning brief waits for</p></div>
+</div>
+<div style="width:440px;display:flex;flex-direction:column;gap:28px;background:#FBFCFA;border:1px solid #C9D0C7;padding:32px">
+<div style="display:flex;flex-direction:column;gap:4px"><p style="font-family:'Archivo', Arial, sans-serif;font-size:72px;font-weight:800;line-height:1">52</p><p style="font-size:24px;line-height:1.3;color:#4D5953">daily sync files since 20 July</p></div>
+<div style="display:flex;flex-direction:column;gap:4px"><p style="font-family:'Archivo', Arial, sans-serif;font-size:72px;font-weight:800;line-height:1">31</p><p style="font-size:24px;line-height:1.3;color:#4D5953">morning briefs since 23 July</p></div>
+<div style="display:flex;flex-direction:column;gap:4px"><p style="font-family:'Archivo', Arial, sans-serif;font-size:72px;font-weight:800;line-height:1">0</p><p style="font-size:24px;line-height:1.3;color:#4D5953">messages sent unattended: it drafts and proposes</p></div>
+</div>
+</div>
+<aside>This is the answer to “how is the workflow actually implemented.” It is a numbered step file the agent runs unattended every morning. Three things to point out. Step 1.5: most days are quiet, so two cheap checks decide whether the expensive work runs at all. Step 2.5: a plain text ledger of Gmail thread IDs makes it idempotent, so a re-run never double-logs and never needs a Notion search to dedupe. Step 3: memory is edited surgically and closed items are demoted to topic files, never deleted, which keeps the current-state file short enough to be followed reliably. Next I would move the top 3 ranking into a scored function in code and back-test it against the 52 saved days.</aside>
+</section>

@@ -1,19 +1,19 @@
 <title>Alex Newton's AI Rig</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Three workflows I run on Claude, Python and Notion, documented down to triggers, inputs, outputs and stack.">
+<meta name="description" content="Three workflows I run on Claude, Python and Notion, documented down to inputs, process, outputs and stack.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: five tabs, two levels deep. Level 1 = a workflow summary (numbers, flow, pieces).
-   Level 2 = a piece's spec card (trigger, inputs, outputs, steps, stack). Nothing deeper.
+/* Layout: five tabs, two levels deep. Level 1 = a workflow summary (numbers, flow, phases at a glance).
+   Level 2 = a phase's spec card (trigger, inputs, outputs, process, stack). Nothing deeper.
    Color encodes who does each step: code, the model, or me. */
 :root{
   --bg:#F1F3EF; --surface:#FFFFFF; --sunk:#E7EAE4; --ink:#17201C; --muted:#56625B; --line:#D2D8D0;
   --accent:#1D6B58;
   --code:#2D57A3; --model:#9E356D; --me:#9A6A0C;
   --code-bg:#E4EBF7; --model-bg:#F5E3EC; --me-bg:#F4ECDA;
-  --warn:#9A5B0C; --warn-bg:#F6EBDD;
+  --warn:#9A5B0C; --warn-bg:#F6EBDD; --arrow:#8A958F;
   --display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
@@ -22,11 +22,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
   --accent:#5BC3A4; --code:#86A9F2; --model:#EC86B9; --me:#E3B252;
-  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; color-scheme:dark}}
+  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
   --accent:#5BC3A4; --code:#86A9F2; --model:#EC86B9; --me:#E3B252;
-  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; color-scheme:dark}
+  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
@@ -38,7 +38,6 @@ ul,ol{margin:0;padding-left:18px}
 code{font:12.5px var(--mono);background:var(--sunk);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-/* header */
 header.top{padding-block:36px 18px}
 .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .title-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;margin-top:12px}
@@ -46,14 +45,13 @@ h1{font-size:clamp(38px,6.4vw,68px);font-weight:800;font-variation-settings:"wdt
 .who{font:13px/1.5 var(--mono);color:var(--muted);text-align:right}
 .who a{color:var(--muted)}
 .lede{max-width:64ch;font-size:17px;margin-top:16px}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:24px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:24px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
 .stat{padding:14px 14px 14px 0;min-width:0}
 .stat + .stat{padding-left:14px;border-left:1px solid var(--line)}
 .n{font:700 32px/1 var(--display);font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
 .stat .l,.tile .l{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}
-@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(odd){padding-left:0;border-left:0}.stat{border-bottom:1px solid var(--line)}.who{text-align:left}}
+@media (max-width:860px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(odd){padding-left:0;border-left:0}.stat{border-bottom:1px solid var(--line)}.stat:nth-child(even){padding-left:14px;border-left:1px solid var(--line)}.who{text-align:left}}
 
-/* tabs */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:8px}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:100%}
@@ -67,7 +65,7 @@ h1{font-size:clamp(38px,6.4vw,68px);font-weight:800;font-variation-settings:"wdt
 
 main{padding-block:28px 64px}
 section.view{display:grid;gap:36px}
-.block{display:grid;gap:14px}
+.block{display:grid;gap:14px;min-width:0}
 .block > h3{font-size:20px;font-weight:700;font-variation-settings:"wdth" 104}
 .sub{color:var(--muted);max-width:70ch}
 h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
@@ -77,7 +75,6 @@ h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
 .chip.live{background:transparent;color:var(--accent);border:1px solid var(--accent);padding:4px 6px}
 .chip.off{background:var(--warn-bg);color:var(--warn)}
 
-/* workflow head */
 .wf-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:end}
 @media (max-width:860px){.wf-head{grid-template-columns:minmax(0,1fr)}}
 .wf-head .job{font-size:17px;max-width:56ch;margin-top:8px}
@@ -86,13 +83,11 @@ h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
 .tile + .tile{padding-left:12px;border-left:1px solid var(--line)}
 .tile .n{font-size:36px}
 
-/* split bar */
 .split{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--sunk)}
 .split i{display:block;height:100%}
 .split i.code{background:var(--code)}.split i.model{background:var(--model)}.split i.me{background:var(--me)}
 .split-l{font:12px var(--mono);color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
 
-/* flow */
 .flow-scroll{overflow-x:auto;padding-bottom:4px}
 .flow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);min-width:max-content}
 .fs{position:relative;padding:0 14px 0 0;min-width:132px}
@@ -104,18 +99,41 @@ h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
 .fs .what{font-weight:600;font-size:14px;line-height:1.3;margin-top:3px}
 .fs .how{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:4px;max-width:22ch}
 
-/* overview cards */
+/* agile loop diagram: one self-contained block; delete the CYCLE block in the data to remove it */
+.cycle-wrap{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:28px;align-items:center}
+@media (max-width:860px){.cycle-wrap{grid-template-columns:minmax(0,1fr)}}
+.cycle{width:100%;height:auto;max-width:560px}
+.cycle .arc{stroke:var(--arrow)}
+.cycle .feed{stroke:var(--muted)}
+.cycle marker path{fill:var(--muted)}
+.cycle text{fill:var(--ink)}
+.cycle text.d,.cycle text.lbl{fill:var(--muted)}
+.cycle rect.code{fill:var(--code-bg);stroke:var(--code)}
+.cycle rect.model{fill:var(--model-bg);stroke:var(--model)}
+.cycle rect.me{fill:var(--me-bg);stroke:var(--me)}
+.cycle-notes{display:grid;gap:10px;font-size:14.5px;max-width:52ch}
+.cycle-notes b{font-weight:600}
+
 .wf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media (max-width:860px){.wf-cards{grid-template-columns:minmax(0,1fr)}}
 .wcard{text-decoration:none;color:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .wcard:hover{border-color:var(--ink)}
-.wcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wcard h3{font-size:21px;font-weight:700;font-variation-settings:"wdth" 106}
 .wcard p{color:var(--muted);font-size:14px}
 .wcard ul{font-size:14px;display:grid;gap:3px}
 .wcard .go{font-weight:600;color:var(--accent);font-size:14px;margin-top:auto}
 
-/* pieces (level 2) */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--ink);vertical-align:bottom}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+th.num{text-align:right}
+table.glance{min-width:760px}
+table.glance td:first-child{font-weight:600;width:19%}
+table.glance td .how{display:block;font:500 11.5px/1.4 var(--mono);color:var(--muted);margin-top:3px;font-weight:500}
+.wt{display:inline-block;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-right:8px;opacity:.75}
+
 .pieces{display:grid;gap:10px}
 details.piece{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 details.piece[open]{border-color:var(--ink)}
@@ -141,15 +159,7 @@ details.piece:not([open]) .ps-toggle .c{display:none}
 .guard{display:grid;gap:4px;font-size:13.5px}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
 @media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
-.tbl-wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13.5px}
-th{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--ink)}
-td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
-td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-th.num{text-align:right}
-.wt{display:inline-block;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-right:8px;opacity:.75}
 
-/* checks */
 .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ink)}
 @media (max-width:860px){.checks{grid-template-columns:minmax(0,1fr)}}
 .ck{padding:12px 16px 14px 0;border-bottom:1px solid var(--line);min-width:0}
@@ -161,7 +171,6 @@ th.num{text-align:right}
 pre.art{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;overflow-x:auto;font:12.5px/1.6 var(--mono);margin:0}
 pre.art .k{color:var(--code)}pre.art .c{color:var(--muted)}
 
-/* platform */
 .princ{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--ink)}
 @media (max-width:760px){.princ{grid-template-columns:minmax(0,1fr)}}
 .pr{padding:14px 18px 16px 0;border-bottom:1px solid var(--line);display:grid;gap:6px;min-width:0}
@@ -177,7 +186,15 @@ pre.art .k{color:var(--code)}pre.art .c{color:var(--muted)}
 .bcard p{font-size:13.5px;color:var(--muted)}
 .bcard .pat{font-size:13px;color:var(--ink)}
 .bcard a{font-size:13px;margin-top:auto}
-.sketch{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;min-width:0}
+.sketch{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:16px;min-width:0}
+.facts{display:flex;flex-wrap:wrap;gap:6px}
+.measures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.measures{grid-template-columns:minmax(0,1fr)}}
+.measures > div{border-top:4px solid var(--code);padding-top:10px;min-width:0}
+.measures > div.me{border-top-color:var(--me)}
+.measures h4{font:600 15px/1.3 var(--body)}
+.measures p{font-size:13.5px;color:var(--muted);margin-top:4px}
+.callout{border-left:3px solid var(--accent);padding:4px 0 4px 14px;font-size:14.5px;max-width:78ch}
 
 footer{border-top:1px solid var(--line);padding-block:20px 40px;color:var(--muted);font-size:13px}
 footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
@@ -186,17 +203,18 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 
 <header class="top">
   <div class="wrap">
-    <div class="eyebrow">Working notes · updated 19 Oct 2026</div>
+    <div class="eyebrow">Working notes · updated 20 Oct 2026</div>
     <div class="title-row">
       <h1>Alex Newton's AI rig</h1>
       <div class="who">Data strategy &amp; operations · Philadelphia<br><a href="https://www.linkedin.com/in/anewt">linkedin.com/in/anewt</a> · <a href="https://github.com/anewt225">github.com/anewt225</a></div>
     </div>
-    <p class="lede">I run three personal workflows on Claude, Python and Notion: my weekly operating rhythm, my career pipeline, and money and home. Scripts do the arithmetic, the model does the judgment, and I make every decision that leaves the building. Each piece below is documented down to its trigger, inputs, outputs and stack.</p>
+    <p class="lede">I run three workflows on Claude, Python and Notion: my weekly operating rhythm, my career pipeline, and personal projects across finances, home and travel. Scripts do the arithmetic, the model does the judgment, and I make every decision that leaves the building. Each phase is documented down to its inputs, process, outputs and stack.</p>
     <div class="stats">
-      <div class="stat"><div class="n">3</div><div class="l">Claude routines and 4 Windows jobs on a schedule</div></div>
+      <div class="stat"><div class="n">32</div><div class="l">connectors on my Claude account, plus 3 local MCP servers</div></div>
       <div class="stat"><div class="n">4</div><div class="l">plugins I wrote: 11 skills, 29 commands, versioned in git</div></div>
       <div class="stat"><div class="n">25</div><div class="l">tools in my custom TickTick MCP server (Python)</div></div>
-      <div class="stat"><div class="n">127</div><div class="l">agent-written reports on file: 52 standups, 31 briefs, 30 retros, 14 plans</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">scheduled jobs: 3 Claude routines, 4 Windows tasks</div></div>
+      <div class="stat"><div class="n">127</div><div class="l">agent-written reports on file: standups, briefs, retros, plans</div></div>
     </div>
   </div>
 </header>
@@ -214,8 +232,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 
 <footer>
   <div class="wrap">
-    <span>Compiled with Claude Code from the system's own config files, run logs and repos, 19 Oct 2026. Finance and household workflows are described by method only.</span>
-    <span style="font-family:var(--mono)">v2.0</span>
+    <span>Compiled with Claude Code from the system's own config files, run logs and repos, 20 Oct 2026. Personal finance, tax and health workflows are described by method only.</span>
+    <span style="font-family:var(--mono)">v3.0</span>
   </div>
 </footer>
 
@@ -223,60 +241,86 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 (() => {
 const OWN = {code:"Code", model:"Model", me:"Me"};
 
+/* ===== CYCLE: the agile loop diagram. Self-contained; set to "" to remove it. ===== */
+const CYCLE = `<div class="cycle-wrap">
+<svg class="cycle" viewBox="0 0 700 660" role="img" aria-label="A daily loop inside a weekly sprint. The productivity sync feeds the daily standup, I do the work, and the next sync picks it up. Seven daily files and Sunday's time tracking feed the weekly retro, then my reflection, then the week-ahead plan, which the next sync reads. A mid-week pulse checks progress.">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs>
+<g fill="none" stroke-width="2.5">
+<path class="arc" d="M458 114 A255 255 0 0 1 596 279" marker-end="url(#ah)"/>
+<path class="arc" d="M596 411 A255 255 0 0 1 458 576" marker-end="url(#ah)"/>
+<path class="arc" d="M242 576 A255 255 0 0 1 104 411" marker-end="url(#ah)"/>
+<path class="arc" d="M104 279 A255 255 0 0 1 242 114" marker-end="url(#ah)"/>
+<path class="arc" d="M268 427 Q205 405 215 312" marker-end="url(#ah)"/>
+<path class="arc" d="M335 280 L365 280" marker-end="url(#ah)"/>
+<path class="arc" d="M485 312 Q495 405 432 427" marker-end="url(#ah)"/>
+<path class="feed" d="M350 246 L350 130" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path class="feed" d="M350 568 L350 488" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path class="feed" d="M200 48 L246 78" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+</g>
+<g font-family="IBM Plex Sans, Arial, sans-serif">
+<text class="lbl" x="360" y="196" font-size="15">7 daily files</text>
+<text class="lbl" x="360" y="534" font-size="15">the plan</text>
+<text class="lbl" x="350" y="372" text-anchor="middle" font-size="13" letter-spacing="2">DAILY LOOP</text>
+<text class="lbl" x="690" y="30" text-anchor="end" font-size="13" letter-spacing="2">WEEKLY SPRINT</text>
+<rect class="model" x="250" y="65" width="200" height="60" rx="10" stroke-width="2.5"/><text x="350" y="91" text-anchor="middle" font-size="17" font-weight="700">Weekly retro</text><text class="d" x="350" y="113" text-anchor="middle" font-size="14">Claude · Sun 18:00</text>
+<rect class="me" x="530" y="315" width="150" height="60" rx="10" stroke-width="2.5"/><text x="605" y="341" text-anchor="middle" font-size="17" font-weight="700">Reflection</text><text class="d" x="605" y="363" text-anchor="middle" font-size="14">Me · notebook</text>
+<rect class="me" x="250" y="570" width="200" height="60" rx="10" stroke-width="2.5"/><text x="350" y="596" text-anchor="middle" font-size="17" font-weight="700">Week ahead</text><text class="d" x="350" y="618" text-anchor="middle" font-size="14">Me + Claude · /plan</text>
+<rect class="model" x="20" y="315" width="150" height="60" rx="10" stroke-width="2.5"/><text x="95" y="341" text-anchor="middle" font-size="17" font-weight="700">Mid-week pulse</text><text class="d" x="95" y="363" text-anchor="middle" font-size="14">Claude · Wed</text>
+<rect class="code" x="20" y="14" width="180" height="56" rx="10" stroke-width="2.5"/><text x="110" y="38" text-anchor="middle" font-size="17" font-weight="700">Time tracking</text><text class="d" x="110" y="58" text-anchor="middle" font-size="14">Python · Sun 12:00</text>
+<rect class="model" x="260" y="427" width="180" height="56" rx="10" stroke-width="2.5"/><text x="350" y="451" text-anchor="middle" font-size="17" font-weight="700">Productivity sync</text><text class="d" x="350" y="471" text-anchor="middle" font-size="14">Claude · daily 04:30</text>
+<rect class="model" x="157" y="252" width="176" height="56" rx="10" stroke-width="2.5"/><text x="245" y="276" text-anchor="middle" font-size="17" font-weight="700">Daily standup</text><text class="d" x="245" y="296" text-anchor="middle" font-size="14">Top 3 + brief · 08:00</text>
+<rect class="me" x="367" y="252" width="176" height="56" rx="10" stroke-width="2.5"/><text x="455" y="276" text-anchor="middle" font-size="17" font-weight="700">Do the work</text><text class="d" x="455" y="296" text-anchor="middle" font-size="14">Me · TickTick, Gmail</text>
+</g></svg>
+<div class="cycle-notes">
+<p><b>Daily loop.</b> The productivity sync pulls what changed since yesterday and writes the daily standup: the top 3 actions and a morning brief. I do the work, and the next sync picks up what moved.</p>
+<p><b>Weekly sprint.</b> Seven daily files and the week's measured time feed the Sunday retro. I reflect on paper, set the week ahead, and Monday's sync reads the plan. A Wednesday pulse checks progress.</p>
+<p><b>Hand-offs are files.</b> Agents never call each other; each run writes a dated file the next one checks for, so any step can be inspected or re-run alone.</p>
+</div></div>`;
+
 /* ============ DATA ============ */
 const WF = [
 {
   id:"rhythm", tab:"Weekly rhythm", title:"Weekly operating rhythm",
-  card:"Agile ceremonies for one: a daily standup, a Sunday retro, sprint planning and a mid-week check, fed by measured time.",
+  card:"Agile ceremonies for one: a productivity sync and daily standup, a Sunday retro and a week-ahead plan, fed by measured time.",
   job:"I treat my week like a sprint. Agents gather the data and draft the ceremonies; I make the calls. Observation without a forcing cadence is just logging.",
   tiles:[["52","daily standups on file since 20 Jul"],["30","weekly retros since 29 Mar"],["8","Python scripts measure where the time went"]],
+  cycle:true,
   flowTitle:"A week of runs",
-  flowSub:"Agents never call each other. Each run writes a dated file, and the next run checks for it before starting, so every hand-off can be inspected and re-run alone.",
+  flowSub:"The same loop as a timeline. Each run writes a dated file, and the next run checks for it before starting.",
   flow:[
     ["code","Sun 12:00","Usage exports","Browser, Windows and ActivityWatch data to Parquet"],
     ["code","Sun 12:20","Summary + dashboard","Rollups and week-over-week deltas in a 2 KB file"],
     ["model","Sun 18:00","Weekly retro","Scorecard, planned vs actual time, open loops"],
-    ["me","Sun evening","Handwritten reflection","Notebook spread, prompted by what the data showed"],
-    ["me","Sun or Mon","Sprint planning","Top 5 priorities and dated commitments"],
-    ["model","Daily 04:30","Standup","Delta sync, Notion logging, top 3 actions"],
-    ["model","Weekdays 08:00","Morning brief","The day as proposals, plus one outreach draft"],
+    ["me","Sun evening","Reflection","Notebook spread, prompted by what the data showed"],
+    ["me","Sun or Mon","Week ahead","Top 5 priorities and dated commitments"],
+    ["model","Daily 04:30–08:00","Sync → standup","Delta sync, top 3 actions, morning brief"],
     ["model","Wednesday","Mid-week pulse","Priorities checked against progress"],
   ],
   pieces:[
-    {name:"Daily standup", file:"productivity-sync", trigger:"Claude routine · daily 04:30 ET", status:"live",
-     purpose:"Pulls only what changed since yesterday, logs job-search email to Notion, edits memory, and writes today's top 3 actions.",
-     inputs:["Gmail: job-search query scoped to after the last sync","Google Calendar: today and the next 7 days","Notion Job Search Tasks database","TickTick via my MCP server","Google Drive: recently changed documents","Latest weekly retro and plan files"],
-     outputs:["<code>CLAUDE.md</code> “Top 3 Actions Today” block","<code>memory/</code> people, project and context files","<code>daily-outputs/YYYY-MM-DD-sync.md</code>","<code>sync-log.md</code>, 30-day window with monthly archives","Notion Communications pages linked to contact, company, opportunity and sprint","<code>synced-threads.txt</code> dedupe ledger"],
-     stack:["Claude Sonnet 5","Claude routine","Notion MCP","Gmail MCP","Calendar MCP","TickTick MCP","Markdown"],
+    {name:"Productivity sync and daily standup", file:"productivity-sync · morning-brief", trigger:"Claude routines · daily 04:30, brief weekdays 08:00 ET", status:"live",
+     io:["Gmail, Calendar, Notion tasks, TickTick, Drive, last week's plan","Delta sync → classify and log email → edit memory → rank top 3 → render brief","Top 3 actions, Notion message log, memory edits, morning brief, one draft"],
+     purpose:"One task in two runs: the sync pulls only what changed since yesterday and ranks the top 3 actions; the standup turns that into a one-page morning brief where every suggestion is a proposal.",
+     inputs:["Gmail: job-search query scoped to after the last sync","Google Calendar: today and the next 7 days","Notion Job Search Tasks and Contacts","TickTick via my MCP server","Google Drive: recently changed documents","Latest retro and week-ahead plan","Readwise highlights; Hunter.io only when Notion has no candidate"],
+     outputs:["<code>CLAUDE.md</code> “Top 3 Actions Today” block","<code>daily-outputs/YYYY-MM-DD-sync.md</code>","Notion Communications pages linked to contact, company, opportunity and sprint","<code>memory/</code> people, project and context files","<code>Morning-Brief/YYYY-MM-DD.html</code> and one Gmail draft (6-point email)","<code>synced-threads.txt</code> dedupe ledger"],
+     stack:["Claude Sonnet 5 (sync)","Claude Opus 5 (brief)","Claude routines","Notion MCP","Gmail MCP","Calendar MCP","TickTick MCP","Markdown, HTML"],
      steps:[
        ["code","Read the current-state file and two ledgers only"],
        ["model","Quiet-day check: new actionable email, calendar change or weekly file? If none, log one line, refresh the top 3 and stop"],
        ["code","Pull deltas from Notion, TickTick and Drive since the last sync"],
        ["model","Classify each new email thread from its body: cold outreach, follow-up, thank-you, scheduling…"],
        ["code","Skip thread IDs already in the ledger; create Notion pages with their relations; append the IDs"],
-       ["model","Fold in a new retro or plan, overwriting any standing advice it corrects"],
-       ["model","Edit memory surgically; demote closed items to topic files and a monthly snapshot"],
+       ["model","Fold in a new retro or plan, overwriting any standing advice it corrects; edit memory surgically"],
        ["model","Rank the top 3: overdue follow-ups, replies owed, 48-hour deadlines. Conversations win ties; items stuck 3+ days get flagged"],
-       ["code","Append the log, rotate entries older than 30 days, write the dated daily file"],
+       ["code","Write the dated daily file; rotate log entries older than 30 days"],
+       ["code","Standup: wait for today's file (3 × 5 minutes), else use the latest and label its date"],
+       ["model","Render the brief: top 3, one deep-work block, a proposed time-blocked day, one outreach draft checked against Sent and Drafts"],
      ],
-     guard:["First output must be a tool call; a greeting counts as a failed run","Links to existing contacts only; never creates one","Reads the log from the tail, never the whole file","Nothing is deleted: closed items move to topic files and archives"]},
-    {name:"Morning brief", file:"morning-brief", trigger:"Claude routine · weekdays 08:00 ET", status:"live", note:"Re-enabled 19 Oct after a time-zone slip",
-     purpose:"Turns the standup into one page for the day. Every section is a proposal I accept, edit or ignore.",
-     inputs:["Today's sync file and top 3 block","Google Calendar","Gmail: threads awaiting reply, Sent, Drafts","Notion Contacts CRM","Hunter.io, only when Notion has no good candidate","Readwise highlights"],
-     outputs:["<code>Morning-Brief/YYYY-MM-DD.html</code>","One Gmail draft: a 6-point outreach email"],
-     stack:["Claude Opus 5","Claude routine","Gmail MCP","Calendar MCP","Notion MCP","Hunter.io MCP","Readwise MCP","HTML"],
-     steps:[
-       ["code","Check for today's sync file; retry 3 × 5 minutes, then fall back to the latest and label its date"],
-       ["model","Pick one deep-work block and the secondary tasks"],
-       ["model","Propose a time-blocked day around the calendar"],
-       ["model","Pick one contact and draft a 6-point email after checking Sent and Drafts for duplicates"],
-       ["model","Close with a short action line backed by a reading highlight"],
-     ],
-     guard:["Never sends, accepts or messages anyone; drafts only","Never waits for an answer; questions become proposals in the page"]},
+     guard:["Never sends, accepts or messages anyone; drafts only","First output must be a tool call; a greeting counts as a failed run","Links to existing contacts only; never creates one","Nothing is deleted: closed items move to topic files and archives"]},
     {name:"Time tracking", file:"usage pipeline", trigger:"Windows Task Scheduler · Sun 12:00 and 12:20", status:"live",
+     io:["ActivityWatch API, three browsers' history, Windows logs, phone exports, Claude session logs","Export to dated Parquet → reconcile → precompute summary → rebuild dashboard","Parquet per source, a 2 KB summary with deltas, a self-contained dashboard"],
      purpose:"Measures where time actually went across a laptop and two phones. Its only job is to feed the retro's planned-vs-actual comparison.",
      inputs:["ActivityWatch REST API on localhost: window, idle and browser watchers","Chrome, Vivaldi and Brave history (SQLite, copied while locked)","Windows System and Security event logs: logon, logoff, unlock, boot","Phone usage exports dropped in an inbox folder","Claude Code session logs (JSONL)"],
-     outputs:["Dated Parquet per source: apps, sites, hours, focus blocks, browsers, sessions, phones","<code>usage-summary_YYYY-MM-DD.md</code> + <code>.json</code>, about 2 KB, with week-over-week deltas","<code>usage-dashboard.html</code>, self-contained"],
+     outputs:["Dated Parquet per source: apps, sites, hours, focus blocks, browsers, sessions, phones","<code>usage-summary_YYYY-MM-DD.md</code> + <code>.json</code>, about 2 KB","<code>usage-dashboard.html</code>, self-contained"],
      stack:["Python 3.14","uv venv","pandas 3","pyarrow","SQLite","ActivityWatch","JSON regex rules, 14 categories","Task Scheduler"],
      steps:[
        ["code","Export 7 days from each source to dated Parquet (4 scripts)"],
@@ -293,9 +337,10 @@ const WF = [
        ["Claude session time came out at 586% of measured app time","Span is not active time; report the topic split only"],
      ]},
     {name:"Weekly retro", file:"weekly-review", trigger:"Claude routine · Sun 18:00 ET", status:"live",
+     io:["Seven daily sync files, the usage summary, Calendar, Gmail, Notion, Fireflies, prior retros","Interpret the summary → score the week → compare with prior weeks → write the narrative","Review, JSON scorecard, Notion row, 3–5 reflection prompts"],
      purpose:"Drafts the Sunday retro: the scorecard first, then planned vs actual time, open loops and an honest assessment. Then it hands off to my notebook.",
      inputs:["Usage summary (read, never recomputed)","Google Calendar: planned time, bucketed","Gmail: four queries including Sent","Notion pipeline and tasks","Fireflies transcripts","Claude sessions and Drive changes","Prior retros"],
-     outputs:["<code>weekly-reviews/YYYY-MM-DD-review.md</code>","<code>weekly-device-usage-YYYY-MM-DD.md</code>","<code>weekly-data/YYYY-MM-DD.json</code>: scorecard, priorities, open loops","Notion Weekly Reviews row","3–5 reflection prompts"],
+     outputs:["<code>weekly-reviews/YYYY-MM-DD-review.md</code>","<code>weekly-data/YYYY-MM-DD.json</code>: scorecard, priorities, open loops","Notion Weekly Reviews row","3–5 reflection prompts"],
      stack:["Claude Opus 5","Claude routine","Fireflies MCP","Notion MCP","Gmail MCP","Calendar MCP","Markdown + JSON"],
      steps:[
        ["model","Interpret the usage summary: categories, cross-source checks, at most five insights"],
@@ -306,15 +351,16 @@ const WF = [
        ["model","<code>/capture</code> reads a photo of the spread and archives it as structured data"],
      ],
      guard:["Unknown figures are null, never 0","A conversation counts as had only with evidence it happened"]},
-    {name:"Sprint planning and mid-week pulse", file:"weekly-rhythm plugin", trigger:"/weekly-rhythm:plan · /weekly-rhythm:pulse", status:"demand",
+    {name:"Week ahead and mid-week pulse", file:"weekly-rhythm plugin", trigger:"/weekly-rhythm:plan · /weekly-rhythm:pulse", status:"demand",
+     io:["The retro and its JSON, my handwritten reflection, Notion sprints, Calendar","I pick the top 5 → Claude proposes dates and time blocks → Monday's sync folds it in","Week-ahead plan; a Wednesday progress check"],
      purpose:"Turns the retro and my reflection into the week's priorities, then checks them on Wednesday.",
      inputs:["This week's retro and its JSON","My handwritten reflection","Notion sprints and tasks","Calendar"],
-     outputs:["<code>weekly-plans/YYYY-MM-DD-plan.md</code>: top 5, secondary goals, dated commitments","Folded into Monday's standup once, tracked in <code>last-weekly-incorporated.txt</code>"],
+     outputs:["<code>weekly-plans/YYYY-MM-DD-plan.md</code>: top 5, secondary goals, dated commitments","Folded into Monday's sync once, tracked in <code>last-weekly-incorporated.txt</code>"],
      stack:["Claude","weekly-rhythm plugin","Notion MCP","Markdown"],
      steps:[
        ["me","Choose the week's top 5 priorities"],
        ["model","Propose secondary goals, dated commitments and time blocks"],
-       ["code","The next standup folds the plan in once, tracked in a ledger"],
+       ["code","The next sync folds the plan in once, tracked in a ledger"],
        ["model","Wednesday pulse compares progress with the plan"],
      ],
      guard:["Planning decisions stay mine; the model proposes"]},
@@ -324,7 +370,7 @@ const WF = [
     ["Setup","One state folder per domain, connectors scoped by each routine's step file, and a permission mode per routine."],
     ["Evaluate","Evidence rules for every count, STALE and MISSING flags, and a stall flag when an action tops the list three days running."],
     ["Optimize","Quiet-day exit, ledger dedupe, tail-only log reads, a 2 KB precomputed summary, and an archive moved out of the state file (23% less input per run)."],
-    ["Measure","North star: conversations held per week, target 5. Output on file: 52 standups, 31 briefs, 30 retros, 14 plans."],
+    ["Measure","North star: conversations held per week, target 5. On file: 52 standups, 31 briefs, 30 retros, 14 plans."],
     ["Next","Move the top-3 ranking into a scored function in code, and add a catch-up when the laptop misses Sunday noon."],
   ],
   artifact:{title:"Data contract: the weekly scorecard", sub:"Written by the retro every Sunday so the trend is machine-readable. Null means unknown; 0 means zero.",
@@ -339,23 +385,25 @@ const WF = [
 },
 {
   id:"career", tab:"Career", title:"Career pipeline",
-  card:"From saved posting to thank-you note: capture, tailoring, outreach, interviews and LinkedIn, all tracked in one Notion data model.",
-  job:"Every role gets captured once, every document gets scored before and after I change it, and every conversation ends with a logged follow-up. The metric is conversations held, not applications sent.",
-  tiles:[["13","commands across 4 skills in one plugin"],["7","linked Notion databases"],["4","scoring rubrics with weighted dimensions"]],
+  card:"Roles, people and events: capture, tailoring, networking events, outreach, interviews and LinkedIn, tracked in one Notion data model.",
+  job:"Every role gets captured once, every document gets scored before and after I change it, every event gets vetted before I go, and every conversation ends with a logged follow-up. The metric is conversations held, not applications sent.",
+  tiles:[["13","commands across 4 skills in one plugin"],["7","linked Notion databases"],["6","networking events prepped since September"]],
   flowTitle:"The pipeline",
-  flowSub:"Six stages, left to right. The daily standup logs every email into Notion, and <code>/today</code> ranks the next actions across all of them.",
+  flowSub:"Left to right. The daily sync logs every job-search email into Notion, and <code>/today</code> ranks the next actions across all of it.",
   flow:[
-    ["code","Capture","Save the role","Reader “jobs” tag → Notion Opportunities"],
+    ["code","Capture","Save the role","Reader “jobs” tag → Notion"],
     ["model","Tailor","/assess → /tailor","Score, rewrite, score again"],
     ["me","Apply","/apply","Logged with a named person attached"],
+    ["model","Events","Vet → prep","Go or skip, ranked sessions, people brief"],
     ["model","Reach out","/outreach","6-point emails from the CRM"],
     ["model","Interview","/prep → /practice","Brief, CAR stories, mock rounds"],
-    ["model","Debrief","/debrief","Fireflies → rating, Notion, thank-you"],
+    ["model","Debrief","/debrief","Rating, Notion records, thank-you"],
   ],
   pieces:[
-    {name:"Capture and track", file:"job capture · /apply · standup logging", trigger:"Daily scheduled run · /apply on demand", status:"off", note:"Capture run inactive: unattended runs stall on a write approval",
+    {name:"Capture and track", file:"job capture · /apply · sync logging", trigger:"Daily scheduled run · /apply on demand", status:"off", note:"Capture run inactive: unattended runs stall on a write approval",
+     io:["Saved postings (Reader “jobs” tag), posting URLs, Gmail threads","Parse posting → look up company → dedupe by URL → create with relations","Notion opportunities, companies and message log; Reader tags"],
      purpose:"Gets every role and every job-search conversation into Notion once, with no duplicates.",
-     inputs:["Readwise Reader items tagged <code>jobs</code> (saved postings)","Posting URLs from Lever, Greenhouse, Ashby and others","Gmail threads, logged by the daily standup"],
+     inputs:["Readwise Reader items tagged <code>jobs</code>","Posting URLs from Lever, Greenhouse, Ashby and others","Gmail threads, logged by the daily sync"],
      outputs:["Notion Opportunities: role, company relation, status, priority","Notion Companies, created only after a lookup","Notion Communications","Reader tags: <code>notion-synced</code>, <code>duplicate-req</code>, <code>bad-capture</code>"],
      stack:["Readwise Reader MCP","Notion MCP","Gmail MCP","Claude"],
      steps:[
@@ -366,6 +414,7 @@ const WF = [
      ],
      guard:["Never creates a duplicate opportunity or company","Until the approval is fixed, capture runs by hand"]},
     {name:"Resume and cover letter", file:"resume-assess skill", trigger:"/assess · /tailor", status:"demand",
+     io:["Resume or letter, the posting, experience bank, framework notes","Score → tailor (GLORY bullets, Pareto letter) → re-score","Tailored .docx and a before/after report per dimension"],
      purpose:"Scores a resume or cover letter against a posting, tailors it, then scores it again so every change is measured.",
      inputs:["Resume or cover letter (.docx or .md)","The posting: URL fetched, or pasted text","Experience bank and past submissions","Framework notes from my career-book library, synced from Drive by <code>/sync</code>"],
      outputs:["Assessment report: before and after, per dimension","Tailored resume and cover letter (.docx) in the company and role folder"],
@@ -381,10 +430,33 @@ const WF = [
        rows:[["Experience",25],["Formatting and ATS",15],["GLORY score",15],["Summary",12],["Contact info",10],["Skills and additional",8],["Education",5],["Certifications",5],["Visual balance",5]]},
      rubric2:{title:"Cover letter rubric", note:"Composite = letter quality 50% + posting alignment 50%.",
        rows:[["Opening hook",20],["Evidence",20],["Keyword integration",15],["Narrative arc",15],["Tone and voice",10],["Structure and length",10],["Closing and call to action",10]]}},
+    {name:"Networking events", file:"event-prep skill (drafted from 6 real runs)", trigger:"An event link · evaluate, prep, debrief, follow up", status:"demand",
+     io:["Event page, ticket email, both calendars, Notion contacts, LinkedIn connections, book notes","Vet the ticket and the room → rank sessions → tier people → brief → calendar → debrief → follow up","Go/skip call, a dated brief, linked calendar blocks, debrief notes, follow-ups in Notion"],
+     purpose:"Decides whether an event is worth the time, preps the people and sessions that matter, then turns the conversations into follow-ups.",
+     inputs:["Event page: agenda, speakers, sponsors (fetched; browser if the page is JavaScript)","Ticket confirmation in Gmail: what the pass actually includes","Personal and career calendars: conflicts and the week's load","Notion contacts and target-company list; LinkedIn connections export","Networking book notes and Readwise highlights"],
+     outputs:["Attend, partial or skip, with the job-search, community and content value stated","A dated brief in the Networking folder: ranked sessions, tiered people, one hook question each","Calendar blocks that link back to the brief","Debrief notes from a template; follow-up drafts and new contacts in Notion"],
+     stack:["Claude","Gmail MCP","Calendar MCP","Notion MCP","Hunter.io MCP","Readwise MCP","Built-in browser","Markdown"],
+     steps:[
+       ["code","Fetch the event page and find the ticket email; check both calendars for conflicts"],
+       ["model","Evaluate the room against my targets: attend, partial or skip"],
+       ["model","Score every session MUST, HIGH, MEDIUM, LOW or SKIP"],
+       ["model","Tier speakers and attendees by helpfulness × influence; research the top tiers"],
+       ["code","Look up emails for the top tier only; mark any inferred identity as inferred"],
+       ["code","Write the brief, then calendar blocks that link to it"],
+       ["me","Go, and have the conversations"],
+       ["model","Debrief from the template; draft follow-ups and update Notion contacts"],
+       ["me","Send the follow-ups"],
+     ],
+     rubric:{title:"Session ranking", note:"Unstructured time is where conversations happen, so breaks and receptions usually rank highest.", scale:[
+       ["MUST / HIGH","Breakfast, lunch, breaks and receptions; speakers from target companies; interactive formats where I can show a strength"],
+       ["+1 tier","Content I can reuse in a post or my positioning"],
+       ["LOW","Generic keynotes with no named speaker"],
+       ["SKIP","Sessions outside my lane, or not on my pass (stated as the reason)"]]}},
     {name:"Networking and outreach", file:"/outreach · morning brief", trigger:"/outreach · weekday brief", status:"demand",
+     io:["Notion Contacts CRM; Hunter.io for people not yet in Notion","Pick the format → draft in my voice → dedupe against Sent and Drafts","Gmail drafts, three per sitting; logged to Notion once sent"],
      purpose:"Drafts outreach in proven formats, working through the CRM in priority order.",
      inputs:["Notion Contacts CRM, the system of record","Optional tiered contact file","Hunter.io for people not yet in Notion: find, domain search, verify","Target-company list"],
-     outputs:["Gmail drafts, three per sitting by default","Notion Communications entries once sent (logged by the standup)","New leads created in Notion once they're real"],
+     outputs:["Gmail drafts, three per sitting by default","Notion Communications entries once sent (logged by the sync)","New leads created in Notion once they're real"],
      stack:["Notion MCP","Hunter.io MCP","Gmail MCP","Claude"],
      steps:[
        ["code","Read contacts and their status: new lead, contacted, met, chatted"],
@@ -394,6 +466,7 @@ const WF = [
      ],
      guard:["Draft only. An unsent draft is an open loop, so drafts are capped per sitting","Automations never read the HubSpot mirror"]},
     {name:"Interviews: prep, practice, debrief", file:"interview-debrief skill", trigger:"/prep · /practice · /debrief", status:"demand",
+     io:["Posting, company research, story bank, Fireflies transcript, my self-rating","Brief → mock rounds → transcript scored against CAR, FIT, TIARA","Prep brief, Notion interview page, tasks, thank-you draft"],
      purpose:"Prepares each round, rehearses answers, then turns the recording into an assessment, updated records and a thank-you draft in one pass.",
      inputs:["Company research and the posting","My interview-story bank (CAR format)","Fireflies transcript fetched by ID, with timestamps","My 3-question self-assessment, collected before the model's analysis"],
      outputs:["Prep brief","Notion Interviews page: rating, questions asked with timestamp links, lessons learned","Updates to Contacts, Opportunities and Tasks","Gmail thank-you draft, 150–250 words"],
@@ -414,6 +487,7 @@ const WF = [
        ["2 · Fair","Several vague or rambling answers; weak questions"],
        ["1 · Poor","Unprepared or off-topic; no rapport or questions"]]}},
     {name:"LinkedIn profile", file:"linkedin-rehab skill", trigger:"/li-score · /li-rewrite · /li-todos · /li-reeval", status:"demand",
+     io:["Profile export, target role, keywords harvested from postings","Score against the rubric → advisory panel → rewrites → export tasks","Audit, 3–5 named rewrites per section, TickTick or Notion tasks"],
      purpose:"Scores the profile against a target role, rewrites the weak sections, exports the fixes as tasks, and re-checks later.",
      inputs:["Profile export or pasted sections","Target role","Keywords harvested from postings","A cached methodology file, refreshed quarterly"],
      outputs:["Audit report","3–5 named rewrites per section","Tasks in TickTick, Notion or CSV (<code>make_todos.py</code>)"],
@@ -426,25 +500,14 @@ const WF = [
      ],
      rubric:{title:"LinkedIn rubric", note:"Each item is scored 0 (absent) to 4 (exemplary), then weighted.",
        rows:[["Discoverability",32],["Relevance and depth",26],["Credibility and proof",22],["Human filter",12],["Engagement signals",8]]}},
-    {name:"Daily priorities", file:"/today", trigger:"/today", status:"demand",
-     purpose:"Ranks the day's 3–5 job-search actions and ends with the weekly scorecard.",
-     inputs:["Notion active opportunities","This week's Communications","Calendar events actually held","Fireflies transcripts"],
-     outputs:["Ranked actions, each with a reason","The weekly scorecard, conversations first"],
-     stack:["Notion MCP","Calendar MCP","Fireflies MCP","Claude"],
-     steps:[
-       ["code","Pull the active pipeline and this week's activity"],
-       ["model","Rank: send what already exists, then urgent items, then warm outreach before cold"],
-       ["model","Report the scorecard, with applications last as a cap"],
-     ],
-     guard:["Never a list made only of applications"]},
   ],
   checks:[
-    ["Why automate it","High frequency and high context: every role needs tailoring and every conversation needs a follow-up."],
+    ["Why automate it","High frequency and high context: every role needs tailoring, every event needs vetting, every conversation needs a follow-up."],
     ["Setup","Seven linked Notion databases, frameworks defined once inside the plugin, and the target role passed in as a parameter."],
-    ["Evaluate","Four rubrics (resume, cover letter, LinkedIn, interview), scored before and after every rewrite."],
+    ["Evaluate","Rubrics for resumes, cover letters, LinkedIn and interviews, scored before and after; a ranking rubric for event sessions."],
     ["Optimize","Research is cached in methodology files and refreshed quarterly instead of re-derived on every run."],
     ["Measure","Conversations held per week, target 5. Applications are a cap, reported last."],
-    ["Next","Fix the capture run's write approval, and let /prep read the story database instead of rebuilding stories."],
+    ["Next","Fix the capture run's write approval, ship the event skill as a command, and let /prep read the story database."],
   ],
   artifact:{title:"Data model: seven Notion databases", sub:"Every automation reads and writes through these relations. Notion wins any disagreement with another tool.",
     table:{head:["Database","Key fields","Links to"], rows:[
@@ -458,11 +521,11 @@ const WF = [
     ]}}
 },
 {
-  id:"money", tab:"Money & home", title:"Money and home",
-  card:"Monthly finance check-ins on a reconciled ledger, a filing assistant, and smaller household loops on the same pattern.",
-  job:"Money has to be exact, so code does every calculation and the model only explains the result. The same pattern runs a few smaller household loops.",
-  tiles:[["1","ledger schema for every bank, card and payment app"],["0","duplicate rows on re-run, thanks to hashed row keys"],["6","cash-flow types classified in code"]],
-  flowTitle:"The monthly check-in",
+  id:"personal", tab:"Personal", title:"Personal projects: finances, home, travel",
+  card:"A reconciled monthly finance check-in, a tax filing assistant, a photo-maintained kitchen inventory, and travel builds from panoramas to an audio tour.",
+  job:"Anything that has to be exact is code; Claude interprets and drafts; I decide. Finance, tax and health work is described by method only.",
+  tiles:[["4","project areas: finances, taxes, home, travel"],["~190","items in a kitchen inventory kept current from photos"],["2,394","travel photos time-corrected and geotagged"]],
+  flowTitle:"The monthly finance check-in",
   flowSub:"Raw exports in, one reconciled ledger out. Everything up to the report is deterministic.",
   flow:[
     ["code","Ingest","Exports land","CSV and PDF statements by account"],
@@ -474,52 +537,73 @@ const WF = [
     ["me","Decide","My call","What changes next month"],
   ],
   pieces:[
-    {name:"Monthly finance check-in", file:"finance pipeline v2 · check-in skill", trigger:"Monthly, when statements land", status:"demand",
+    {name:"Monthly Finances Check-In", file:"finance pipeline v2 · check-in skill", trigger:"Monthly, when statements land", status:"demand",
+     io:["YTD account statements and exports, account terms, last month's summary and tasks","Python: parse → normalize → hash-dedupe → reconcile; Claude explains variances","HTML dashboard, Excel snapshot, TickTick tasks, Notion summary"],
      purpose:"Turns raw account exports into one ledger, reconciles it, and produces net worth, budget vs actual and runway.",
-     inputs:["CSV exports and PDF statements from several banks, cards and payment apps","A balances file for reconciliation","A conscious-spending budget"],
-     outputs:["Master transaction ledger (CSV, one schema)","Reconcile report (JSON)","Snapshot workbook: net worth, budget vs actual, runway","HTML trend dashboards and a Notion summary"],
-     stack:["Python","csv + hashlib","Excel","HTML","Notion MCP","Claude"],
+     inputs:["CSV exports and PDF statements from several banks, cards and payment apps","Account terms and conditions documents","Last month's summary and open tasks","A balances file and a conscious-spending budget"],
+     outputs:["Master transaction ledger (CSV, one schema) and a reconcile report (JSON)","Excel snapshot: net worth, budget vs actual, runway","HTML trend dashboards","TickTick tasks and a Notion summary"],
+     stack:["Python","csv + hashlib","Excel","HTML","TickTick MCP","Notion MCP","Claude"],
      steps:[
        ["code","Parse each institution's export format into one schema"],
        ["code","Normalize signs: money in is positive, money out is negative; card conventions corrected"],
        ["code","Classify the flow: income, purchase, payment, transfer, fee or interest"],
        ["code","Append to the master ledger keyed by a row hash, so re-runs never duplicate"],
-       ["code","Check every account's balance against the balances file; write the reconcile report; flag stale accounts"],
-       ["model","Categorize the edge cases, explain variances, write the check-in"],
+       ["code","Check every account's balance; write the reconcile report; flag stale accounts"],
+       ["model","Categorize edge cases, explain variances, write the check-in and propose tasks"],
        ["me","Decide what changes"],
      ],
      guard:["No account numbers or credentials in any file","Statements reconcile the ledger, never the reverse"]},
-    {name:"Filing assistant", file:"plugin · 5 skills, 5 commands", trigger:"On demand", status:"demand",
-     purpose:"Organizes a multi-jurisdiction late filing: which documents exist, which penalties apply, and what relief is available.",
-     inputs:["Tax documents in the finance folder","Prior-year records"],
-     outputs:["Document checklist","Penalty and relief estimates","Retirement-plan rollover eligibility check","Filing worksheet"],
-     stack:["Claude","Custom plugin","Markdown"],
+    {name:"State & Federal Tax Filing Assistant", file:"plugin · 5 skills, 5 commands", trigger:"On demand, during tax season", status:"demand",
+     io:["Tax code references, W-2s, other forms pulled in as needed","Document checklist → calculations in code → step-by-step guidance","Ready-to-file PDFs, TickTick tasks, a step-by-step guide in Markdown"],
+     purpose:"Organizes a state, city and federal filing: which documents are needed, the calculations, and the steps to file.",
+     inputs:["Basic tax code and form instructions","W-2s and other income forms","Additional documents requested as the return takes shape"],
+     outputs:["Ready-to-file PDFs","Step-by-step filing guidance in Markdown","TickTick tasks for anything outstanding"],
+     stack:["Claude","Custom plugin","Python","Markdown","TickTick MCP"],
      steps:[
        ["model","Inventory the documents and list what's missing"],
-       ["code","Estimate penalties from the published rules"],
-       ["model","Check relief eligibility and explain the options"],
-       ["me","File"],
+       ["code","Run the calculations from the published rules"],
+       ["model","Write the filing steps and flag decisions for me"],
+       ["me","Review and file"],
      ],
      guard:["Described by method only; no figures on this page","Every decision and the filing itself are mine"]},
-    {name:"Home and health", file:"scripts · Notion", trigger:"Scripts and ad hoc", status:"demand",
-     purpose:"Smaller loops on the same pattern: kitchen inventory, sleep and wearable data, and a home-network evidence log.",
-     inputs:["Kitchen inventory (Notion database)","Wearable API (Python script) and a sleep log","A continuous network-loss logger that starts with the machine"],
-     outputs:["Inventory with package size and amount left as separate fields","Sleep trends cross-checked against device logons and travel","A dated evidence log of connection quality"],
-     stack:["Python","Notion MCP","PowerShell","Claude"],
+    {name:"Home and health", file:"kitchen-inventory skill · scripts", trigger:"Photos and receipts as they arrive · loggers", status:"demand",
+     io:["Grocery receipts, kitchen-zone photos, recipe chats, wearable data, network logs","Claude reads photos into Notion after my approval; Python loggers","Kitchen inventory, grocery list, recipes, health notes, ISP evidence log and emails"],
+     purpose:"Smaller loops on the same pattern: a kitchen inventory that cuts food waste, health check-ins, and a home-network evidence log.",
+     inputs:["Photos of each kitchen zone and grocery receipts or order emails","Recipe conversations","Wearable API (Python script) and a sleep log","A continuous network-loss logger that starts with the machine"],
+     outputs:["Notion kitchen inventory: item, size, amount left, location, status, restock","Grocery list in TickTick or Google Keep, driven by the restock flag","Recipes and batch-cooking plans from what's on hand","Conversational health check-ins","A dated network evidence log and emails to the provider"],
+     stack:["Claude vision","Notion MCP","TickTick MCP","Python","PowerShell"],
      steps:[
-       ["code","Poll the wearable API and log sleep"],
-       ["model","Flag outliers and cross-check them against device and travel records"],
-       ["code","Log packet loss continuously from startup"],
+       ["model","Read a zone photo or receipt into rows: item, size, amount left, location"],
+       ["model","Preview every add, change, used-up or tossed row"],
+       ["me","Approve the preview"],
+       ["code","Write the rows in batches and confirm the count"],
+       ["code","Log sleep from the wearable and packet loss from startup"],
        ["me","Escalate with the evidence. A technician found an unauthorized splitter; loss fell from 1.05% to 0.09%"],
-     ]},
+     ],
+     guard:["Size and amount left are separate fields; a size is never guessed","Nothing is written to the inventory without my approval"]},
+    {name:"Travel", file:"panorama-automation · trip builds", trigger:"Before and after each trip", status:"demand",
+     io:["DSLR and phone photos, GPS tracks, location history, itineraries, bookings, reading","Claude Code + Python: ExifTool, rawpy, OpenCV, Hugin; HTML and audio builds","Stitched panoramas, geotagged library, trip dashboard, itineraries, an audio walking tour"],
+     purpose:"Planning and keeping trips: itineraries and a trip dashboard before, then photos repaired, geotagged and stitched after, plus a self-guided audio tour.",
+     inputs:["DSLR raw files and phone photos","Phone GPS track and location-history export","Itineraries, bookings and research notes","Readwise highlights for places to see"],
+     outputs:["Stitched panoramas with GPS and date (36 of 38 bursts)","2,394 photos time-corrected and 100% geotagged","Eurowinter '25 trip dashboard (HTML)","Itineraries with “next time in” notes","Baldwin Paris audio walking tour (offline web app)"],
+     stack:["Claude Code","Python + uv","ExifTool","rawpy","OpenCV","Hugin CLI","edge-tts","HTML, PWA"],
+     steps:[
+       ["code","Shift capture times to the true zone across EXIF, XMP and IPTC; idempotent and reversible"],
+       ["code","Build a GPX track from phone photos and geotag the camera files in UTC"],
+       ["code","Detect panorama bursts, develop from raw, stitch with a projection chosen per scene"],
+       ["me","Review every panorama at full size; overrule tone-mapping and projection where needed"],
+       ["model","Draft itineraries and the trip dashboard from bookings and notes"],
+       ["code","Render tour narration per stop, re-rendering only stops whose text changed"],
+     ],
+     guard:["Two agent defaults overruled after full-resolution review","Originals backed up before any metadata change"]},
   ],
   checks:[
-    ["Why automate it","Monthly, tedious, and it has to be exact."],
-    ["Setup","One folder per stage: statements, transactions, budget, summaries. A balances file per period."],
-    ["Evaluate","A balance check on every account and a reconcile report on every run."],
-    ["Optimize","Scripts do all the arithmetic; the model reads one report instead of raw exports."],
-    ["Measure","Accounts reconciled, and days since each account's last export."],
-    ["Next","Receipt photos into the kitchen inventory."],
+    ["Why automate it","Monthly, tedious, and it has to be exact; or one-off, photo-heavy work that's slow by hand."],
+    ["Setup","One folder per stage for finance; one Notion database for the kitchen; one repo per travel build."],
+    ["Evaluate","A balance check on every account and a reconcile report every run; every inventory write previewed first."],
+    ["Optimize","Scripts do the arithmetic and metadata; the model reads one report or one photo at a time."],
+    ["Measure","Accounts reconciled and days since each export; food thrown away; panoramas that pass my review."],
+    ["Next","Receipt photos straight into the inventory; publish the panorama package as a portfolio piece."],
   ],
   artifact:{title:"Data contract: the unified ledger", sub:"Every institution's export is normalized into these columns before anything else happens.",
     table:{head:["Column","Type","Rule"], rows:[
@@ -536,8 +620,8 @@ const WF = [
 
 const STACK = [
   ["AI agents","Claude Code (build and debug) · Claude desktop routines (scheduled) · Claude Opus 5 and Sonnet 5","Runs the routines; builds and maintains everything else"],
-  ["Packaging","4 custom plugins (11 skills, 29 commands) · private git plugin marketplace · signed commits","Versioned instructions; push a commit, click Update"],
-  ["Connectors","Hosted MCP: Gmail, Calendar, Drive, Docs, Sheets, Notion, Fireflies, Readwise, Hunter.io · Custom: TickTick server (Python, 25 tools, OAuth2) · Local: ActivityWatch (built from source) · Desktop Commander, browser, computer use","Typed read and write access per service, scoped by each step file"],
+  ["Packaging","4 custom plugins (11 skills, 29 commands) · private git plugin marketplace · signed commits · 11 plugins installed in total","Versioned instructions; push a commit, click Update"],
+  ["Connectors","32 hosted connectors, including Gmail, Calendar, Drive, Docs, Sheets, Notion, Fireflies, Readwise, HubSpot, Airtable, Figma and Zoom · Custom: TickTick server (Python, 25 tools, OAuth2) · Local: ActivityWatch (built from source), Desktop Commander · browser and computer use","Typed read and write access per service, scoped by each step file"],
   ["Data and compute","Python 3.14 · uv (one venv per repo) · pandas 3 · pyarrow and Parquet · SQLite · JSON · Markdown","Every number, export, reconciliation and summary"],
   ["Scheduling","Claude routines (cron with time zone) · Windows Task Scheduler","Daily, weekday and Sunday runs"],
   ["Records and UI","Notion (system of record) · TickTick · Google Calendar · Gmail · HubSpot (my UI only)","Where people, roles and tasks live"],
@@ -548,17 +632,17 @@ const SOR = [
   ["Contacts","Notion Contacts","HubSpot (my UI), Hunter.io (discovery)","Notion wins. Automations never query the mirror. A lead is real once it's in Notion."],
   ["Communications","Notion Communications","Gmail threads","A thread-ID ledger prevents duplicates; oldest first."],
   ["Tasks","TickTick (doing)","Notion tasks (planning)","One way, Notion to TickTick. Kept flat, because subtasks don't survive the sync."],
-  ["Current state, all domains","Productivity state file","Drive backup","The daily standup owns it; no hand edits."],
+  ["Current state, all domains","Productivity state file","Drive backup","The daily sync owns it; no hand edits."],
   ["Frameworks and rubrics","job-search plugin","Book notes, highlights","Defined in one place; cached research refreshed quarterly."],
   ["Transcripts","Fireflies","Zoom","Fetched by ID. A keyword search with no results proves nothing."],
   ["Device time","Usage Parquet + summary","Phone exports","The precomputed summary is canonical; raw logs are a fallback."],
   ["Planned time","Google Calendar","Time-tracker mirror","Calendar is intent. Proof something happened comes from elsewhere."],
   ["Money","Master ledger","Statements, account exports","Statements reconcile the ledger; staleness checked per account."],
   ["Health","Sleep log + wearable","Visit notes","Outliers cross-checked against device logons and travel."],
-  ["Kitchen","Notion inventory","Photos, receipts (planned)","Package size and amount left are separate fields."],
+  ["Kitchen","Notion inventory","Photos, receipts","Package size and amount left are separate fields."],
 ];
 const PRINCIPLES = [
-  ["Observation without a forcing cadence is just logging","Every data source feeds a ceremony that ends in a decision: the standup, the retro or the plan.","Shows up as: the week of runs"],
+  ["Observation without a forcing cadence is just logging","Every data source feeds a ceremony that ends in a decision: the standup, the retro or the plan.","Shows up as: the daily loop inside the weekly sprint"],
   ["Computation in cron, judgment in the agent","Scripts produce every number. The model interprets and prioritizes; it never fetches and transforms.","Shows up as: the 2 KB usage summary, the finance pipeline"],
   ["Actions, not status","Every ceremony output starts with a verb. “Send the follow-up, 37 days overdue” beats “lead is cold.”","Shows up as: the top 3 block, /today"],
   ["Automate the boring ceremonies; keep the judgment ones human","Planning, reflection, the call to drop a dead lead, and every send stay with me.","Shows up as: the amber steps throughout"],
@@ -570,9 +654,9 @@ const PRINCIPLES = [
 const BUILDS = [
   ["Career tools","Job Search Assistant, shareable","My plugin rebuilt for other people: 8 standalone skills, a setup wizard, a Notion template and a build script that bundles shared files into each module.","Pattern: package it so someone else can run it","",""],
   ["Career tools","Prioritizing Grid","A pairwise-ranking tool from What Color Is Your Parachute, with an express mode that uses transitivity to cut 45 comparisons to about 20.","Pattern: pick the algorithm, then the interface","https://anewt225.github.io/parachute/","Live site"],
-  ["Travel and creative","Panorama automation","Time repair and geotagging for 2,394 photos and batch stitching of 38 raw panorama bursts, built by directing a coding agent.","Pattern: delegate the mechanics, own the quality calls","https://github.com/anewt225/panorama-automation","Repo and case study"],
-  ["Travel and creative","Baldwin audio walking tour","An offline phone tour of Paris with neural narration. Editing one stop re-renders only that stop, keyed by a hash of its text.","Pattern: content as data, incremental rebuilds","https://anewt225.github.io/baldwin-paris-audio-tour/","Live site"],
-  ["Travel and creative","Photo organizer","Sorts a photo library by date taken, trying EXIF, video metadata, filename and file dates in that order, with duplicate detection and a dry run.","Pattern: priority-ordered sources for one field","",""],
+  ["For fun","Chronotype quiz","Combines the Munich Chronotype Questionnaire with morningness-eveningness and sleep-quality items; calculates social jet lag and gives recommendations by life area.","Pattern: validated instruments, plain-language results","",""],
+  ["For fun","The Twenty Rooms","A brand-identity quiz: a zero-to-one diagnostic that walks through twenty “rooms” to surface how someone wants to be seen.","Pattern: a structured interview as an interactive page","",""],
+  ["For fun","Philly events MCP server","A TypeScript MCP server that searches Do215, Visit Philly and Eventbrite at once, filters by category and neighborhood, and exports to Google Calendar.","Pattern: one tool interface over several messy sources","",""],
 ];
 
 /* ============ RENDER HELPERS ============ */
@@ -592,6 +676,9 @@ function splitBar(w){
 function flow(steps){
   return `<div class="flow-scroll"><div class="flow">${steps.map((s,i) => `
     <div class="fs ${s[0]}"><div class="dot" aria-hidden="true">${i+1}</div><div class="when">${s[1]}</div><div class="what">${s[2]}</div><div class="how">${s[3]}</div></div>`).join("")}</div></div>`;
+}
+function glance(w){
+  return `<div class="tbl-wrap"><table class="glance"><thead><tr><th>Phase</th><th>Inputs (data)</th><th>Process</th><th>Outputs</th></tr></thead><tbody>${w.pieces.map(p => `<tr><td>${p.name}<span class="how">${p.trigger}</span></td><td>${p.io[0]}</td><td>${p.io[1]}</td><td>${p.io[2]}</td></tr>`).join("")}</tbody></table></div>`;
 }
 function rubricHtml(r){
   if (!r) return "";
@@ -616,7 +703,7 @@ function piece(p){
         <div><div class="lab">Stack</div><div class="stack">${p.stack.map(s => `<span class="chip plain">${s}</span>`).join("")}</div>
           ${p.guard ? `<div class="lab" style="margin-top:16px">Guardrails</div><ul class="guard">${li(p.guard)}</ul>` : ""}</div>
       </div>
-      <div><div class="lab">Steps, in order · ${p.file}</div><ol class="steps">${p.steps.map((s,i) => `<li><span class="sn">${i+1}</span><span><span class="chip ${s[0]}">${OWN[s[0]]}</span></span><span>${s[1]}</span></li>`).join("")}</ol></div>
+      <div><div class="lab">Process, step by step · ${p.file}</div><ol class="steps">${p.steps.map((s,i) => `<li><span class="sn">${i+1}</span><span><span class="chip ${s[0]}">${OWN[s[0]]}</span></span><span>${s[1]}</span></li>`).join("")}</ol></div>
       ${rub}${fixes}
     </div>
   </details>`;
@@ -624,13 +711,16 @@ function piece(p){
 function workflowView(w){
   const art = w.artifact.pre ? `<pre class="art">${w.artifact.pre}</pre>`
     : `<div class="tbl-wrap"><table><thead><tr>${w.artifact.table.head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${w.artifact.table.rows.map(r => `<tr>${r.map((c,i) => `<td${i===0?' style="font-weight:600"':""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  const cyc = (w.cycle && CYCLE) ? `<div class="block"><h3>How the ceremonies connect</h3>${CYCLE}</div>` : "";
   return `<section class="view" id="${w.id}" role="tabpanel" aria-labelledby="tab-${w.id}" hidden>
     <div class="wf-head">
       <div><h2>${w.title}</h2><p class="job">${w.job}</p></div>
       <div class="tiles">${w.tiles.map(t => `<div class="tile"><div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join("")}</div>
     </div>
+    ${cyc}
     <div class="block"><h3>${w.flowTitle}</h3><p class="sub">${w.flowSub}</p>${flow(w.flow)}</div>
-    <div class="block"><h3>The pieces</h3><p class="sub">Open any piece for its trigger, inputs, outputs, stack and every step, tagged by who does it.</p>
+    <div class="block"><h3>Phases at a glance</h3><p class="sub">What data goes in, what happens to it, and what comes out. Open any phase below for the full spec.</p>${glance(w)}</div>
+    <div class="block"><h3>The phases</h3><p class="sub">Trigger, inputs, outputs, stack, and every step tagged by who does it.</p>
       <div style="max-width:420px">${splitBar(w)}</div>
       <div class="pieces">${w.pieces.map(piece).join("")}</div></div>
     <div class="block"><h3>${w.artifact.title}</h3><p class="sub">${w.artifact.sub}</p>${art}</div>
@@ -642,7 +732,7 @@ function workflowView(w){
 /* ============ VIEWS ============ */
 const main = document.getElementById("main");
 const overview = `<section class="view" id="overview" role="tabpanel" aria-labelledby="tab-overview">
-  <div class="block"><h3>Three workflows</h3><p class="sub">Each opens to the same layout: what it's for, how it flows, and a spec card for every piece.</p>
+  <div class="block"><h3>Three workflows</h3><p class="sub">Each opens to the same layout: what it's for, how it flows, the phases at a glance, and a spec card for every phase.</p>
     <div class="wf-cards">${WF.map(w => `<a class="wcard" href="#${w.id}" data-go="${w.id}">
       <h3>${w.title}</h3><p>${w.card}</p>
       <ul>${w.tiles.map(t => `<li><b>${t[0]}</b> ${t[1]}</li>`).join("")}</ul>
@@ -652,31 +742,32 @@ const overview = `<section class="view" id="overview" role="tabpanel" aria-label
   <div class="block"><h3>What stays human</h3><p class="sub" style="color:var(--ink)">Planning, reflection, the call to drop a dead lead, and every message, payment or filing that leaves my machine. Scheduled runs draft and propose; they never send.</p></div>
 </section>`;
 const platform = `<section class="view" id="platform" role="tabpanel" aria-labelledby="tab-platform" hidden>
-  <div class="wf-head"><div><h2>Platform</h2><p class="job">What all three workflows share: the stack, who owns which data, the rules I build by, side projects, and how this carries over to a client.</p></div></div>
+  <div class="wf-head"><div><h2>Platform</h2><p class="job">What all three workflows share: the stack, who owns which data, the rules I build by, side builds, and a client proposal that uses the same patterns.</p></div></div>
   <div class="block"><h3>The stack</h3>
     <div class="tbl-wrap"><table style="min-width:640px"><thead><tr><th>Layer</th><th>Tools</th><th>What it does here</th></tr></thead><tbody>${STACK.map(r => `<tr><td style="font-weight:600;white-space:nowrap">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td></tr>`).join("")}</tbody></table></div></div>
   <div class="block"><h3>Which source wins</h3><p class="sub">One owner per kind of data. When two tools disagree, the conflict rule decides.</p>
     <div class="tbl-wrap"><table style="min-width:720px"><thead><tr><th>Data</th><th>Source of truth</th><th>Feeders and mirrors</th><th>Conflict rule</th></tr></thead><tbody>${SOR.map(r => `<tr><td style="font-weight:600">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div></div>
   <div class="block"><h3>Rules I build by</h3>
     <div class="princ">${PRINCIPLES.map((p,i) => `<div class="pr"><h4>${i+1}. ${p[0]}</h4><p>${p[1]}</p><p class="ev">${p[2]}</p></div>`).join("")}</div></div>
-  <div class="block"><h3>Builds</h3><p class="sub">Standalone projects outside the three workflows, grouped by purpose.</p>
+  <div class="block"><h3>Side builds</h3><p class="sub">Standalone projects outside the three workflows. Travel builds live under Personal.</p>
     <div class="builds">${BUILDS.map(b => `<div class="bcard"><span class="grp">${b[0]}</span><h4>${b[1]}</h4><p>${b[2]}</p><p class="pat">${b[3]}</p>${b[4] ? `<a href="${b[4]}">${b[5]} →</a>` : ""}</div>`).join("")}</div></div>
-  <div class="block"><h3>Applying it to a client</h3>
+  <div class="block"><h3>Applying it to a multi-unit franchise</h3>
     <div class="sketch">
-      <span class="chip plain" style="justify-self:start">Design sketch, not built</span>
-      <p style="max-width:72ch">A five-store ice cream franchisee wanted help with inventory, training and POS data. Their managers spent their analysis time collecting data. Same patterns, different owner:</p>
-      <div class="tbl-wrap"><table style="min-width:680px"><thead><tr><th>KPI or task</th><th>Source of truth</th><th>Who does the work</th><th>Guardrail</th></tr></thead><tbody>
-        <tr><td style="font-weight:600">Sales and sales mix</td><td>POS export</td><td><span class="chip code">Code</span> nightly pull, reconciled to the franchisor report</td><td>A mismatch flags the store; nothing auto-corrects</td></tr>
-        <tr><td style="font-weight:600">Tub inventory</td><td>Manager photo</td><td><span class="chip model">Model</span> estimates fill level; the manager confirms</td><td>Tolerance band; the manager's tap is the record</td></tr>
-        <tr><td style="font-weight:600">Reorder quantities</td><td>Inventory × sales</td><td><span class="chip code">Code</span> par-level formula</td><td>The model never sets order sizes</td></tr>
-        <tr><td style="font-weight:600">Monday brief</td><td>All of the above</td><td><span class="chip model">Model</span> narrative and top 3 per store</td><td>Proposals only; nothing sent to staff</td></tr>
+      <span class="chip plain" style="justify-self:start">Proposal · February 2026 · client anonymized</span>
+      <p style="max-width:76ch">An ice cream franchisee with four stores and a fast-growing catering business asked for help with inventory, production and reporting. Production was set each day from a visual count and a spreadsheet averaging two weeks of usage, and it didn't sync between stores. The owner wanted staff to understand the why behind every number.</p>
+      <div class="facts"><span class="chip plain">4 stores, 1 opening</span><span class="chip plain">170 flavors, ~40 active</span><span class="chip plain">250 catering events targeted</span><span class="chip plain">NCR Aloha POS · 7shifts · SharePoint · Excel</span></div>
+      <div class="tbl-wrap"><table style="min-width:720px"><thead><tr><th>Phase</th><th>What happens</th><th>Tech and data</th><th>Deliverables</th></tr></thead><tbody>
+        <tr><td style="font-weight:600">Discover · 2 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: build or buy</span></td><td>Shadow managers and the weekly GM meeting; map the inventory workflow, data flows and pain points; score vendors against a custom build</td><td>NCR Aloha Cloud (API), 7shifts labor data, SharePoint catering CRM, Excel inventory</td><td>Current-state assessment, data dictionary, data-flow diagram, requirements, vendor recommendation</td></tr>
+        <tr><td style="font-weight:600">Design · 2 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: pilot go/no-go</span></td><td>Wireframe the dashboard; prototype an iPad inventory form; design a batch sheet that shows its math</td><td>Power BI, Power Apps, SharePoint data model; weekday and weekend running averages with a manual override</td><td>Dashboard prototype, inventory form, data model, prioritized features, pilot plan</td></tr>
+        <tr><td style="font-weight:600">Deliver · 3–4 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: launch</span></td><td>Pilot in one store with old and new running in parallel for a week; refine; roll out; train managers</td><td>Daily data refresh; batch sheets synced across stores; 30 days of support</td><td>Live dashboard, working inventory system, training materials, SOPs</td></tr>
       </tbody></table></div>
-      <div><div class="lab">Six weeks, one store first</div>${flow([
-        ["me","Week 1","Discover","KPIs, the decision each drives, the source that owns it"],
-        ["code","Weeks 2–3","Build","Pulls, reconciliation, photo capture, the brief"],
-        ["model","Week 4","Evaluate","Photo estimates vs manual counts; brief vs manager judgment"],
-        ["code","Week 5","Tune","Cost per run, model size, what to cache"],
-        ["me","Week 6","Hand off","Train managers, document, measure time saved"]])}</div>
+      <div><div class="lab">How success would be measured</div>
+        <div class="measures">
+          <div><h4>Dashboard</h4><p>Weekly KPIs reviewed in under 10 minutes, down from hours; data no more than 24 hours old; managers see their own store.</p></div>
+          <div><h4>Production</h4><p>Daily plan in under 15 minutes; running averages automatic; batch sheets synced, no phone calls between stores; less waste.</p></div>
+          <div class="me"><h4>Adoption</h4><p>Every manager trained within 2 weeks of launch; the legacy spreadsheet retired, not run alongside.</p></div>
+        </div></div>
+      <p class="callout"><b>What happened:</b> a month later the owner built his own version with AI in about two weeks, covering inventory, pricing and multi-store dashboards. Build versus buy has shifted: deep operating knowledge plus AI now beats a long vendor project, and the value moves to scoping, data definitions and adoption.</p>
     </div></div>
 </section>`;
 main.innerHTML = overview + WF.map(workflowView).join("") + platform;
@@ -687,7 +778,7 @@ const tabsEl = document.getElementById("tabs");
 tabsEl.innerHTML = TABS.map(([id,l]) => `<button class="tab" role="tab" id="tab-${id}" aria-controls="${id}" aria-selected="false">${l}</button>`).join("");
 function showTab(id, scroll){
   TABS.forEach(([t]) => { document.getElementById(t).hidden = t !== id; document.getElementById("tab-"+t).setAttribute("aria-selected", String(t === id)); });
-  try { localStorage.setItem("rig-tab-v2", id); } catch(e){}
+  try { localStorage.setItem("rig-tab-v3", id); } catch(e){}
   try { history.replaceState(null, "", "#"+id); } catch(e){}
   if (scroll) document.querySelector(".bar").scrollIntoView({block:"start"});
 }
@@ -700,8 +791,9 @@ tabsEl.addEventListener("keydown", e => {
 });
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", e => { e.preventDefault(); showTab(b.dataset.go, true); }));
 const h = (location.hash || "").slice(1);
-let start = TABS.some(t => t[0] === h) ? h : null;
-if (!start) { try { start = localStorage.getItem("rig-tab-v2"); } catch(e){} }
+const alias = {money:"personal"};
+let start = TABS.some(t => t[0] === h) ? h : (alias[h] || null);
+if (!start) { try { start = localStorage.getItem("rig-tab-v3"); } catch(e){} }
 showTab(TABS.some(t => t[0] === start) ? start : "overview");
 })();
 </script>

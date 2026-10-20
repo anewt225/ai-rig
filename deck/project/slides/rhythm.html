@@ -1,25 +1,57 @@
-<section id="rhythm" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<section id="rhythm" data-transition="fade" style="display:flex;flex-direction:column;gap:32px;padding:128px;background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
 <div style="display:flex;flex-direction:column;gap:12px">
 <p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Workflow 1 · agile ceremonies for one</p>
-<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Weekly operating rhythm</h2>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1;color:#17201C">Weekly operating rhythm</h2>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:12px">
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #2D57A3;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Sun 12:00</p><p style="font-size:26px;font-weight:600;line-height:1.25">Usage exports</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #2D57A3;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Sun 12:20</p><p style="font-size:26px;font-weight:600;line-height:1.25">2 KB summary</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9E356D;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Sun 18:00</p><p style="font-size:26px;font-weight:600;line-height:1.25">Weekly retro</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9A6A0C;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Sun night</p><p style="font-size:26px;font-weight:600;line-height:1.25">Handwritten reflection</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9A6A0C;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Sun / Mon</p><p style="font-size:26px;font-weight:600;line-height:1.25">Sprint planning</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9E356D;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Daily 04:30</p><p style="font-size:26px;font-weight:600;line-height:1.25">Standup</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9E356D;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Wkdy 08:00</p><p style="font-size:26px;font-weight:600;line-height:1.25">Morning brief</p></div>
-<div style="display:flex;flex-direction:column;gap:4px;border-top:6px solid #9E356D;padding:12px 0 0 0"><p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Wednesday</p><p style="font-size:26px;font-weight:600;line-height:1.25">Mid-week pulse</p></div>
-</div>
-<table style="font-size:24px;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
-<tr><th style="width:20%;text-align:left;color:#4D5953">Piece</th><th style="width:40%;text-align:left;color:#4D5953">Reads</th><th style="width:40%;text-align:left;color:#4D5953">Writes</th></tr>
-<tr><td><b>Daily standup</b></td><td>Gmail, Calendar, Notion tasks, TickTick, Drive, weekly files</td><td>Top 3 actions, memory files, Notion messages, dated sync file</td></tr>
-<tr><td><b>Morning brief</b></td><td>Today’s sync, Calendar, Gmail, Notion CRM, reading highlights</td><td>One-page HTML brief; one Gmail draft, never sent</td></tr>
-<tr><td><b>Time tracking</b></td><td>ActivityWatch API, 3 browsers’ history, event logs, phone exports</td><td>Dated Parquet, a 2 KB summary, a dashboard</td></tr>
-<tr><td><b>Weekly retro</b></td><td>Usage summary, Calendar, Gmail, Notion, Fireflies, prior retros</td><td>Review, JSON scorecard, Notion row, reflection prompts</td></tr>
-<tr><td><b>Sprint planning</b></td><td>The retro, my handwritten reflection, Notion sprints</td><td>Week-ahead plan, folded into Monday’s standup once</td></tr>
+<div style="display:flex;gap:40px;align-items:start">
+<svg aria-label="A daily loop inside a weekly sprint. Daily: the productivity sync at 04:30 feeds the daily standup (top 3 actions and the morning brief), I do the work, and the next sync picks it up. Weekly: seven daily files and Sunday's time tracking feed the weekly retro, then my handwritten reflection, then the week-ahead plan, which the next productivity sync reads. A mid-week pulse checks progress on Wednesday." width="700" height="660" viewBox="0 0 700 660" style="width:640px;height:603px" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#4D5953"/></marker></defs>
+<path d="M458 114 A255 255 0 0 1 596 279" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M596 411 A255 255 0 0 1 458 576" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M242 576 A255 255 0 0 1 104 411" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M104 279 A255 255 0 0 1 242 114" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M268 427 Q205 405 215 312" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M335 280 L365 280" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M485 312 Q495 405 432 427" fill="none" stroke="#8A958F" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M350 246 L350 130" fill="none" stroke="#4D5953" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path d="M350 568 L350 488" fill="none" stroke="#4D5953" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<path d="M200 48 L246 78" fill="none" stroke="#4D5953" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+<text x="360" y="196" font-family="Arial, sans-serif" font-size="15" fill="#4D5953">7 daily files</text>
+<text x="360" y="534" font-family="Arial, sans-serif" font-size="15" fill="#4D5953">the plan</text>
+<text x="350" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" letter-spacing="2" fill="#4D5953">DAILY LOOP</text>
+<text x="690" y="30" text-anchor="end" font-family="Arial, sans-serif" font-size="13" letter-spacing="2" fill="#4D5953">WEEKLY SPRINT</text>
+<rect x="250" y="65" width="200" height="60" rx="10" fill="#F5E3EC" stroke="#9E356D" stroke-width="2.5"/>
+<text x="350" y="91" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Weekly retro</text>
+<text x="350" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Claude · Sun 18:00</text>
+<rect x="530" y="315" width="150" height="60" rx="10" fill="#F4ECDA" stroke="#9A6A0C" stroke-width="2.5"/>
+<text x="605" y="341" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Reflection</text>
+<text x="605" y="363" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Me · notebook</text>
+<rect x="250" y="570" width="200" height="60" rx="10" fill="#F4ECDA" stroke="#9A6A0C" stroke-width="2.5"/>
+<text x="350" y="596" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Week ahead</text>
+<text x="350" y="618" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Me + Claude · /plan</text>
+<rect x="20" y="315" width="150" height="60" rx="10" fill="#F5E3EC" stroke="#9E356D" stroke-width="2.5"/>
+<text x="95" y="341" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Mid-week pulse</text>
+<text x="95" y="363" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Claude · Wed</text>
+<rect x="20" y="14" width="180" height="56" rx="10" fill="#E4EBF7" stroke="#2D57A3" stroke-width="2.5"/>
+<text x="110" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Time tracking</text>
+<text x="110" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Python · Sun 12:00</text>
+<rect x="260" y="427" width="180" height="56" rx="10" fill="#F5E3EC" stroke="#9E356D" stroke-width="2.5"/>
+<text x="350" y="451" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Productivity sync</text>
+<text x="350" y="471" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Claude · daily 04:30</text>
+<rect x="157" y="252" width="176" height="56" rx="10" fill="#F5E3EC" stroke="#9E356D" stroke-width="2.5"/>
+<text x="245" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Daily standup</text>
+<text x="245" y="296" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Top 3 + brief · 08:00</text>
+<rect x="367" y="252" width="176" height="56" rx="10" fill="#F4ECDA" stroke="#9A6A0C" stroke-width="2.5"/>
+<text x="455" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17201C">Do the work</text>
+<text x="455" y="296" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4D5953">Me · TickTick, Gmail</text>
+</svg>
+<table style="flex:1;font-family:'IBM Plex Sans', Arial, sans-serif;font-size:24px;color:#17201C">
+<tr><th style="width:30%;text-align:left;color:#4D5953">Phase</th><th style="width:35%;text-align:left;color:#4D5953">Inputs</th><th style="width:35%;text-align:left;color:#4D5953">Outputs</th></tr>
+<tr><td><b>Productivity sync + standup</b><br><span style="color:#4D5953">Daily · Claude</span></td><td>Gmail, Calendar, Notion tasks, TickTick, Drive, last week’s plan</td><td>Top 3, Notion log, memory edits, morning brief and one draft</td></tr>
+<tr><td><b>Time tracking</b><br><span style="color:#4D5953">Sunday · Python</span></td><td>ActivityWatch, browser history, Windows logs, phone exports</td><td>Dated Parquet, a 2 KB summary, a dashboard</td></tr>
+<tr><td><b>Weekly retro</b><br><span style="color:#4D5953">Sunday · Claude</span></td><td>7 daily sync files, usage summary, Calendar, Gmail, Fireflies</td><td>Review, JSON scorecard, Notion row, reflection prompts</td></tr>
+<tr><td><b>Week ahead</b><br><span style="color:#4D5953">Sun–Mon · me + /plan</span></td><td>The retro, my handwritten reflection, Notion sprints</td><td>Top 5 priorities and dated commitments, read by Monday’s sync</td></tr>
 </table>
-<aside>Blue steps are code, plum steps are the model, amber steps are me. Agents never call each other: each run writes a dated file and the next run checks for it, so every hand-off can be inspected and re-run alone. The standup exits early on quiet days after two cheap checks, dedupes email against a plain-text ledger of thread IDs, and never deletes anything. Time tracking exists only to feed the retro’s planned-versus-actual comparison: four Windows jobs and eight Python scripts compute everything, and the retro reads the summary without recomputing it. The scorecard writes null, not zero, when a number is unknown, and a conversation counts as held only with evidence. Full spec for each piece is on the site.</aside>
+</div>
+<aside>The diagram is one element: delete it and the table widens to fill the page. Read the diagram as a daily loop inside a weekly sprint. Every morning the productivity sync pulls what changed since yesterday and writes the daily standup: the top 3 actions and the morning brief with one outreach draft. I do the work, and the next sync picks up what moved. On Sunday, seven daily files and the week’s measured time feed the retro; I reflect on paper; the week-ahead plan goes back into Monday’s sync. Blue is code, plum is Claude, amber is me. Agents never call each other: each run writes a dated file the next run checks for. The sync exits early on quiet days, dedupes email against a ledger of thread IDs, and never deletes anything. The retro writes null, not zero, for unknown numbers, and counts a conversation as held only with evidence.</aside>
 </section>

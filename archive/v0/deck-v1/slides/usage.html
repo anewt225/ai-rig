@@ -1,0 +1,23 @@
+<section id="usage" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Deep dive 2 · the usage pipeline</p>
+<h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Compute in Python, interpret in Claude</h2>
+</div>
+<div style="display:flex;gap:16px;align-items:center">
+<div style="flex:1;background:#E4EBF7;border-top:6px solid #2D57A3;padding:18px 20px"><p style="font-size:24px;line-height:1.3"><b>3 exports</b><br>browser, Windows, ActivityWatch</p></div>
+<x-shape kind="arrow-right" style="background:#4D5953;width:44px;height:24px"></x-shape>
+<div style="flex:1;background:#E4EBF7;border-top:6px solid #2D57A3;padding:18px 20px"><p style="font-size:24px;line-height:1.3"><b>Imports</b><br>phones, Claude sessions</p></div>
+<x-shape kind="arrow-right" style="background:#4D5953;width:44px;height:24px"></x-shape>
+<div style="flex:1;background:#E4EBF7;border-top:6px solid #2D57A3;padding:18px 20px"><p style="font-size:24px;line-height:1.3"><b>2 KB summary</b><br>rollups, deltas, dashboard</p></div>
+<x-shape kind="arrow-right" style="background:#4D5953;width:44px;height:24px"></x-shape>
+<div style="flex:1;background:#F5E3EC;border-top:6px solid #9E356D;padding:18px 20px"><p style="font-size:24px;line-height:1.3"><b>weekly-review</b><br>reads it, never recomputes</p></div>
+</div>
+<table style="font-size:24px;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif">
+<tr><th style="width:56%;text-align:left;color:#4D5953">What broke</th><th style="width:44%;text-align:left;color:#4D5953">The fix</th></tr>
+<tr><td>Laptop asleep at noon, so all four tasks fire at login and the elevated export deadlocked</td><td>Run unelevated with log-reader access and a 2-hour limit</td></tr>
+<tr><td>The summary read 3-day-old data and labeled it OK</td><td>Wait up to 20 minutes; flag each source STALE or MISSING</td></tr>
+<tr><td>A Python uninstall broke every run; the scheduler still said success</td><td>Dedicated venv and the real exit code passed through</td></tr>
+<tr><td>Claude session time came out at 586% of measured app time</td><td>Span is not active time; report the topic split only</td></tr>
+</table>
+<aside>Here is the deterministic versus model trade-off made concrete. I wanted to know where my time actually goes across a laptop, three browsers and two phones. Early on the model re-parsed raw logs every week, which was slow, costly and impossible to audit. Now four Windows tasks and eight Python scripts compute everything into a 2 KB summary, and the review agent only interprets it, so the numbers in my review cannot be invented. The table is the part I would emphasize with a client: these are real failure modes, race conditions at login, stale data labeled OK, silent success on total failure, and each fix makes failure loud. Reconciling trackers also surfaced that 69 percent of my screen time was on phones, which the pipeline had been missing entirely.</aside>
+</section>
