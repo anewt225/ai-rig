@@ -629,7 +629,7 @@ const WF = [
        ["model","Draft itineraries and the trip dashboard from bookings and notes"],
        ["code","Render tour narration per stop, re-rendering only stops whose text changed"],
      ],
-     links:[["Panorama repo and case study","https://github.com/anewt225/panorama-automation"],["Baldwin audio tour","https://anewt225.github.io/baldwin-paris-audio-tour/"]],
+     links:[["Panorama repo and case study","https://github.com/anewt225/panorama-automation"],["Baldwin audio tour","https://anewt225.github.io/baldwin-paris-audio-tour/"],["Eurowinter '25 trip dashboard","https://claude.ai/artifact/2UUN2rWZSy4hJTDVzgvD45"]],
      guard:["Two agent defaults overruled after full-resolution review","Originals backed up before any metadata change"]},
   ],
   data:{title:"Data contract: the unified ledger", sub:"Every institution's export is normalized into these columns before anything else happens.",
@@ -720,9 +720,9 @@ const GALLERY = [
   ["Recovery","Interview recording rescue","Recovered a usable interview transcript when the recorder caught only my mic: cleaned the audio, transcribed it, and spot-checked it against my notes.",["Audio cleanup","Speech-to-text"],"","","28 Jul 2026, the day of the interview"],
   ["Research","AI year in review","Ran the same year-in-review prompts through ChatGPT, Claude, Gemini and NotebookLM, compared the answers, and turned them into a 2026 plan.",["Four assistants","Docs"],"","","December 2025"],
   ["Writing","Agile ceremonies blog series","A planning board for a series on running agile ceremonies as a team of one, with every statistic sourced and dated.",["Claude artifact","Trello"],"","","Planned 27 Aug 2026"],
-  ["For fun","Chronotype quiz","Combines the Munich Chronotype Questionnaire with morningness-eveningness and sleep items; calculates social jet lag and gives recommendations.",["JavaScript","HTML"],"","","Built January 2026"],
-  ["For fun","The Twenty Rooms","A brand-identity quiz: a zero-to-one diagnostic through twenty “rooms” that surfaces how someone wants to be seen.",["HTML"],"","","Built 19 Oct 2026"],
-  ["For fun","Philly events MCP server","A TypeScript MCP server that searches Do215, Visit Philly and Eventbrite at once, filters by neighborhood, and exports to Google Calendar.",["TypeScript","MCP"],"","","Built December 2025"],
+  ["For fun","Chronotype quiz","Combines the Munich Chronotype Questionnaire with morningness-eveningness and sleep items; calculates social jet lag and gives recommendations.",["JavaScript","HTML"],"https://anewt225.github.io/chronotype-quiz/","Take the quiz","Built January 2026"],
+  ["For fun","The Twenty Rooms","A brand-identity quiz: a zero-to-one diagnostic through twenty “rooms” that surfaces how someone wants to be seen.",["HTML"],"https://anewt225.github.io/twenty-rooms/","Take the quiz","Built 19 Oct 2026"],
+  ["For fun","Philly events MCP server","A TypeScript MCP server that searches Do215, Visit Philly and Eventbrite at once, filters by neighborhood, and exports to Google Calendar.",["TypeScript","MCP"],"https://github.com/anewt225/philly-events-mcp-server","Code on GitHub","Built December 2025"],
 ];
 
 /* ============ RENDER HELPERS ============ */
@@ -851,7 +851,7 @@ const projects = `<section class="view" id="projects" role="tabpanel" aria-label
     </div>
   </div>
   <div class="block"><h3>Side builds and experiments</h3><p class="sub">Smaller projects outside the three workflows. Travel builds (panoramas, the Baldwin tour) live under Personal.</p>
-    <div class="gallery">${GALLERY.map(g => `<div class="gcard"><div class="top"><span class="grp">${g[0]}</span>${g[4] ? `<span class="chip live">Live</span>` : ""}</div><h4>${g[1]}</h4><p>${g[2]}</p><div class="stack">${g[3].map(s => `<span class="chip plain">${s}</span>`).join("")}</div>${g[6] ? `<p class="hint">${g[6]}</p>` : ""}${g[4] ? `<a href="${g[4]}">${g[5]} →</a>` : ""}</div>`).join("")}</div></div>
+    <div class="gallery">${GALLERY.map(g => `<div class="gcard"><div class="top"><span class="grp">${g[0]}</span>${g[4] ? `<span class="chip live">${g[4].includes("github.com/") ? "Code" : "Live"}</span>` : ""}</div><h4>${g[1]}</h4><p>${g[2]}</p><div class="stack">${g[3].map(s => `<span class="chip plain">${s}</span>`).join("")}</div>${g[6] ? `<p class="hint">${g[6]}</p>` : ""}${g[4] ? `<a href="${g[4]}">${g[5]} →</a>` : ""}</div>`).join("")}</div></div>
 </section>`;
 
 const platform = `<section class="view" id="platform" role="tabpanel" aria-labelledby="tab-platform" hidden>
