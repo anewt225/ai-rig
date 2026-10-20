@@ -1,14 +1,47 @@
-<section id="money" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<section id="money" data-transition="fade" style="background:#F1F3EF;color:#17201C;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
 <div style="display:flex;flex-direction:column;gap:12px">
-<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Workflow 3 · personal data, described by method only</p>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#1D6B58">Workflow 3 · described by method only</p>
 <h2 style="font-family:'Archivo', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Personal projects: finances, home, travel</h2>
 </div>
-<table style="font-family:'IBM Plex Sans', Arial, sans-serif;font-size:24px;color:#17201C">
-<tr><th style="width:13%;text-align:left;color:#4D5953"></th><th style="width:22%;text-align:left;color:#17201C">Monthly Finances Check-In</th><th style="width:22%;text-align:left;color:#17201C">State &amp; Federal Tax Filing Assistant</th><th style="width:21%;text-align:left;color:#17201C">Home and health</th><th style="width:22%;text-align:left;color:#17201C">Travel</th></tr>
-<tr><td><b>Input data</b></td><td>YTD statements, account terms, last month’s summary and tasks</td><td>Tax code references, W-2s, other forms as needed</td><td>Grocery receipts, kitchen photos, recipe chats, sleep and network logs</td><td>DSLR and phone photos, GPS tracks, itineraries, bookings</td></tr>
-<tr><td><b>Workflow</b></td><td>Python: parse, normalize, hash-dedupe, reconcile; Claude explains</td><td>Claude plugin, 5 skills: checklist, math in code, guidance</td><td>Claude reads photos into Notion after my OK; Python loggers</td><td>Claude Code + Python: ExifTool, rawpy, OpenCV, Hugin; HTML builds</td></tr>
-<tr><td><b>Output artifacts</b></td><td>HTML dashboard, Excel snapshot, TickTick tasks</td><td>Ready-to-file PDFs, TickTick tasks, step-by-step guide</td><td>Inventory, grocery list, recipes, health notes, ISP log and emails</td><td>Stitched panoramas, Eurowinter dashboard, Baldwin audio tour</td></tr>
-</table>
-<p style="font-size:24px;line-height:1.4;color:#4D5953;border-top:1px solid #C9D0C7;padding:16px 0 0 0"><b style="color:#17201C">For fun:</b> a chronotype quiz, a brand-identity quiz (“The Twenty Rooms”) and an MCP server that searches Philadelphia events.</p>
-<aside>Same pattern as the other workflows: code does anything that must be exact, Claude interprets, and I decide. The finance pipeline parses each institution’s export into one schema, appends to a master ledger keyed by a hash so re-runs never duplicate, and checks every account’s balance before writing a reconcile report. The tax assistant is a plugin with five skills that organizes documents, runs the calculations in code and writes step-by-step filing guidance; I file. The kitchen inventory is a Notion database of about 190 items kept current from zone photos and receipts: Claude previews every change and writes only after I approve, and a restock checkbox drives the grocery list. Travel covers the panorama pipeline (2,394 photos time-corrected and geotagged, 38 raw bursts stitched), a trip dashboard, itineraries, and the Baldwin audio walking tour. No institution names, account numbers or figures appear here.</aside>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #C9D0C7;border-top:6px solid #2D57A3;border-radius:12px;padding:24px">
+<div style="width:64px;height:64px;border-radius:50%;background:#E4EBF7;display:flex;align-items:center;justify-content:center"><x-icon name="Chart" style="color:#2D57A3;width:36px;height:36px"></x-icon></div>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2">Monthly Finances Check-In</h3>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">IN</p>
+<p style="font-size:24px;line-height:1.35">Statements, account terms, last month’s tasks</p>
+<x-shape kind="arrow-down" style="background:#8A958F;width:24px;height:40px"></x-shape>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">OUT</p>
+<p style="font-size:24px;line-height:1.35">Dashboard, Excel snapshot, TickTick tasks</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #C9D0C7;border-top:6px solid #9E356D;border-radius:12px;padding:24px">
+<div style="width:64px;height:64px;border-radius:50%;background:#F5E3EC;display:flex;align-items:center;justify-content:center"><x-icon name="Verified" style="color:#9E356D;width:36px;height:36px"></x-icon></div>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2">State &amp; Federal Tax Filing Assistant</h3>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">IN</p>
+<p style="font-size:24px;line-height:1.35">Tax references, W-2s, other forms</p>
+<x-shape kind="arrow-down" style="background:#8A958F;width:24px;height:40px"></x-shape>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">OUT</p>
+<p style="font-size:24px;line-height:1.35">Ready-to-file PDFs, a step-by-step guide</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #C9D0C7;border-top:6px solid #2B7A7F;border-radius:12px;padding:24px">
+<div style="width:64px;height:64px;border-radius:50%;background:#DCEEEE;display:flex;align-items:center;justify-content:center"><x-icon name="Home" style="color:#2B7A7F;width:36px;height:36px"></x-icon></div>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2">Home and health</h3>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">IN</p>
+<p style="font-size:24px;line-height:1.35">Receipts, kitchen photos, recipe chats</p>
+<x-shape kind="arrow-down" style="background:#8A958F;width:24px;height:40px"></x-shape>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">OUT</p>
+<p style="font-size:24px;line-height:1.35">Inventory, grocery list, recipes</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #C9D0C7;border-top:6px solid #2D57A3;border-radius:12px;padding:24px">
+<div style="width:64px;height:64px;border-radius:50%;background:#E4EBF7;display:flex;align-items:center;justify-content:center"><x-icon name="Globe" style="color:#2D57A3;width:36px;height:36px"></x-icon></div>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2">Travel</h3>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">IN</p>
+<p style="font-size:24px;line-height:1.35">Raw photos, GPS tracks, itineraries</p>
+<x-shape kind="arrow-down" style="background:#8A958F;width:24px;height:40px"></x-shape>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">OUT</p>
+<p style="font-size:24px;line-height:1.35">Panoramas, trip dashboard, audio tour</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1100px;font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953">Full spec: <a href="https://anewt225.github.io/ai-rig/#personal">anewt225.github.io/ai-rig/#personal</a></p>
+<p style="position:absolute;right:128px;bottom:64px;width:400px;text-align:right;font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#4D5953"><a href="https://anewt225.github.io/ai-rig/">Site home ↩</a></p>
+<aside>Same pattern as the other workflows: code does anything that must be exact, Claude interprets, and I decide. The finance pipeline is Python: it parses each institution’s export into one schema, appends to a master ledger keyed by a hash so re-runs never duplicate, and checks every account’s balance before writing a reconcile report. The tax assistant is a plugin with five skills that organizes documents, works the calculations step by step, and writes filing guidance; I file. The kitchen inventory is a Notion database of about 190 items kept current from zone photos and receipts; Claude previews every change and writes only after I approve. Travel is the panorama pipeline (2,394 photos time-corrected and geotagged, 38 raw bursts stitched with ExifTool, rawpy, OpenCV and Hugin), a trip dashboard, and the Baldwin audio walking tour. No institution names, account numbers or figures appear here.</aside>
 </section>

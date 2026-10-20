@@ -1,18 +1,19 @@
 <title>Alex Newton's AI Rig</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Three workflows I run on Claude, Python and Notion, documented down to inputs, process, outputs and stack.">
+<meta name="description" content="Three workflows I run on Claude, Python and Notion, plus projects, documented down to inputs, process, outputs and stack.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: five tabs, two levels deep. Level 1 = a workflow summary (numbers, flow, phases at a glance).
-   Level 2 = a phase's spec card (trigger, inputs, outputs, process, stack). Nothing deeper.
-   Color encodes who does each step: code, the model, or me. */
+/* Layout: six tabs, each cascading map → phases → data → rationale.
+   The map (diagram or pipeline) is clickable and opens the matching phase.
+   Phases start collapsed; opened, each shows four component cards: inputs, outputs, stack, process.
+   Color encodes who does each step: a script, the agent following a fixed step (action), the agent deciding (judgment), or me. */
 :root{
   --bg:#F1F3EF; --surface:#FFFFFF; --sunk:#E7EAE4; --ink:#17201C; --muted:#56625B; --line:#D2D8D0;
-  --accent:#1D6B58;
-  --code:#2D57A3; --model:#9E356D; --me:#9A6A0C;
-  --code-bg:#E4EBF7; --model-bg:#F5E3EC; --me-bg:#F4ECDA;
+  --accent:#1D6B58; --accent-bg:#DDEDE7;
+  --code:#2D57A3; --tool:#2B7A7F; --model:#9E356D; --me:#9A6A0C;
+  --code-bg:#E4EBF7; --tool-bg:#DCEEEE; --model-bg:#F5E3EC; --me-bg:#F4ECDA;
   --warn:#9A5B0C; --warn-bg:#F6EBDD; --arrow:#8A958F;
   --display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -21,14 +22,16 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
-  --accent:#5BC3A4; --code:#86A9F2; --model:#EC86B9; --me:#E3B252;
-  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}}
+  --accent:#5BC3A4; --accent-bg:#16302A; --code:#86A9F2; --tool:#6CC6C9; --model:#EC86B9; --me:#E3B252;
+  --code-bg:#18233A; --tool-bg:#123032; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111614; --surface:#18201C; --sunk:#0C100E; --ink:#E4EAE5; --muted:#99A69F; --line:#2B3530;
-  --accent:#5BC3A4; --code:#86A9F2; --model:#EC86B9; --me:#E3B252;
-  --code-bg:#18233A; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}
+  --accent:#5BC3A4; --accent-bg:#16302A; --code:#86A9F2; --tool:#6CC6C9; --model:#EC86B9; --me:#E3B252;
+  --code-bg:#18233A; --tool-bg:#123032; --model-bg:#341A28; --me-bg:#2F2512; --warn:#E3A452; --warn-bg:#33240F; --arrow:#6F7B75; color-scheme:dark}
 
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 a{color:var(--accent);text-underline-offset:2px}
@@ -37,69 +40,105 @@ p{margin:0}
 ul,ol{margin:0;padding-left:18px}
 code{font:12.5px var(--mono);background:var(--sunk);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;color:inherit}
 
-header.top{padding-block:36px 18px}
-.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.title-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;margin-top:12px}
-h1{font-size:clamp(38px,6.4vw,68px);font-weight:800;font-variation-settings:"wdth" 118;line-height:.94;letter-spacing:-.01em}
+/* header (slim, on every tab) */
+header.top{padding-block:26px 14px}
+.title-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 32px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+h1{font-size:clamp(34px,5.4vw,56px);font-weight:800;font-variation-settings:"wdth" 118;line-height:.95;letter-spacing:-.01em}
 .who{font:13px/1.5 var(--mono);color:var(--muted);text-align:right}
 .who a{color:var(--muted)}
-.lede{max-width:64ch;font-size:17px;margin-top:16px}
-.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:24px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
-.stat{padding:14px 14px 14px 0;min-width:0}
-.stat + .stat{padding-left:14px;border-left:1px solid var(--line)}
-.n{font:700 32px/1 var(--display);font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
-.stat .l,.tile .l{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}
-@media (max-width:860px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(odd){padding-left:0;border-left:0}.stat{border-bottom:1px solid var(--line)}.stat:nth-child(even){padding-left:14px;border-left:1px solid var(--line)}.who{text-align:left}}
+@media (max-width:760px){.who{text-align:left}}
 
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
-.bar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:8px}
+.bar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:6px}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:100%}
-.tab{font:500 14.5px/1 var(--body);padding:12px 14px 10px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab{font:500 14.5px/1 var(--body);padding:12px 13px 10px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer;white-space:nowrap}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{width:10px;height:10px;border-radius:2px;display:inline-block}
-.sw.code{background:var(--code)}.sw.model{background:var(--model)}.sw.me{background:var(--me)}
+.sw.code{background:var(--code)}.sw.tool{background:var(--tool)}.sw.model{background:var(--model)}.sw.me{background:var(--me)}
 
-main{padding-block:28px 64px}
-section.view{display:grid;gap:36px}
-.block{display:grid;gap:14px;min-width:0}
-.block > h3{font-size:20px;font-weight:700;font-variation-settings:"wdth" 104}
-.sub{color:var(--muted);max-width:70ch}
+main{padding-block:26px 64px}
+section.view{display:grid;gap:40px}
+.block{display:grid;gap:14px;min-width:0;scroll-margin-top:72px}
+.block > h3,.block-h h3{font-size:20px;font-weight:700;font-variation-settings:"wdth" 104}
+.sub{color:var(--muted);max-width:72ch}
 h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
 .chip{font:500 11.5px/1 var(--mono);padding:5px 7px;border-radius:4px;white-space:nowrap;display:inline-block}
-.chip.code{background:var(--code-bg);color:var(--code)}.chip.model{background:var(--model-bg);color:var(--model)}.chip.me{background:var(--me-bg);color:var(--me)}
+.chip.code{background:var(--code-bg);color:var(--code)}.chip.tool{background:var(--tool-bg);color:var(--tool)}.chip.model{background:var(--model-bg);color:var(--model)}.chip.me{background:var(--me-bg);color:var(--me)}
 .chip.plain{background:var(--sunk);color:var(--muted)}
 .chip.live{background:transparent;color:var(--accent);border:1px solid var(--accent);padding:4px 6px}
 .chip.off{background:var(--warn-bg);color:var(--warn)}
 
+/* overview */
+.lede{max-width:66ch;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.stat{padding:14px 14px 14px 0;min-width:0}
+.stat + .stat{padding-left:14px;border-left:1px solid var(--line)}
+.n{font:700 32px/1 var(--display);font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
+.stat .l,.tile .l{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}
+@media (max-width:860px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat,.stat + .stat{padding:12px 12px 12px 0;border-left:0;border-bottom:1px solid var(--line)}.stat:nth-child(even){padding-left:12px;border-left:1px solid var(--line)}}
+.wf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.wf-cards{grid-template-columns:minmax(0,1fr)}}
+.wcard{text-decoration:none;color:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.wcard:hover{border-color:var(--ink)}
+.wcard h3{font-size:21px;font-weight:700;font-variation-settings:"wdth" 106}
+.wcard p{color:var(--muted);font-size:14px}
+.wcard ul{font-size:14px;display:grid;gap:3px}
+.wcard .go{font-weight:600;color:var(--accent);font-size:14px;margin-top:auto}
+.more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.more{grid-template-columns:minmax(0,1fr)}}
+.more .wcard{flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px}
+.more .wcard h3{font-size:17px}
+
+/* workflow head */
 .wf-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:end}
 @media (max-width:860px){.wf-head{grid-template-columns:minmax(0,1fr)}}
-.wf-head .job{font-size:17px;max-width:56ch;margin-top:8px}
+.wf-head .job{font-size:16.5px;max-width:58ch;margin-top:8px}
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ink)}
+.tiles.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:620px){.tiles.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tile{padding:12px 12px 4px 0;min-width:0}
 .tile + .tile{padding-left:12px;border-left:1px solid var(--line)}
-.tile .n{font-size:36px}
+.tile .n{font-size:34px}
 
-.split{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--sunk)}
+.split{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--sunk)}
 .split i{display:block;height:100%}
-.split i.code{background:var(--code)}.split i.model{background:var(--model)}.split i.me{background:var(--me)}
+.split i.code{background:var(--code)}.split i.tool{background:var(--tool)}.split i.model{background:var(--model)}.split i.me{background:var(--me)}
 .split-l{font:12px var(--mono);color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
 
-.flow-scroll{overflow-x:auto;padding-bottom:4px}
-.flow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);min-width:max-content}
-.fs{position:relative;padding:0 14px 0 0;min-width:132px}
-.fs::before{content:"";position:absolute;left:0;right:0;top:15px;height:2px;background:var(--line)}
-.fs:last-child::before{right:auto;width:16px}
-.fs .dot{position:relative;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--mono);color:var(--bg);background:var(--c)}
-.fs.code{--c:var(--code)}.fs.model{--c:var(--model)}.fs.me{--c:var(--me)}
-.fs .when{font:500 12px/1.3 var(--mono);color:var(--muted);margin-top:10px}
-.fs .what{font-weight:600;font-size:14px;line-height:1.3;margin-top:3px}
-.fs .how{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:4px;max-width:22ch}
+/* clickable pipeline (maps 1:1 to phase cards) */
+.pipe-scroll{overflow-x:auto;padding:4px 2px 6px}
+.pipe{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(138px,1fr);min-width:max-content;gap:0}
+.pstep{all:unset;box-sizing:border-box;position:relative;cursor:pointer;padding:0 12px 6px 0;min-width:138px;display:block}
+.pstep::before{content:"";position:absolute;left:0;right:0;top:17px;height:2px;background:var(--line)}
+.pstep:last-child::before{right:auto;width:18px}
+.pstep .dot{position:relative;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:600 13px var(--mono);color:var(--bg);background:var(--c);transition:transform .15s}
+.pstep.code{--c:var(--code)}.pstep.tool{--c:var(--tool)}.pstep.model{--c:var(--model)}.pstep.me{--c:var(--me)}
+.pstep .what{display:block;font-weight:600;font-size:14.5px;line-height:1.3;margin-top:10px}
+.pstep .how{display:block;font:500 12px/1.4 var(--mono);color:var(--muted);margin-top:3px}
+.pstep:hover .dot,.pstep:focus-visible .dot{transform:scale(1.12)}
+.pstep:hover .what{color:var(--accent)}
+.pstep:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+.hint{font:500 12px var(--mono);color:var(--muted)}
 
-/* agile loop diagram: one self-contained block; delete the CYCLE block in the data to remove it */
+/* area tiles (Personal map) */
+.areas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.areas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.areas{grid-template-columns:minmax(0,1fr)}}
+.area{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.area.code{--c:var(--code)}.area.tool{--c:var(--tool)}.area.model{--c:var(--model)}.area.me{--c:var(--me)}
+.area:hover{border-color:var(--ink);border-top-color:var(--c)}
+.area:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.area .num{font:600 12px var(--mono);color:var(--muted)}
+.area b{font-size:15px;line-height:1.3}
+.area span.s{font-size:13px;color:var(--muted)}
+
+/* agile loop diagram */
 .cycle-wrap{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:28px;align-items:center}
 @media (max-width:860px){.cycle-wrap{grid-template-columns:minmax(0,1fr)}}
 .cycle{width:100%;height:auto;max-width:560px}
@@ -111,55 +150,67 @@ h2{font-size:30px;font-weight:700;font-variation-settings:"wdth" 108}
 .cycle rect.code{fill:var(--code-bg);stroke:var(--code)}
 .cycle rect.model{fill:var(--model-bg);stroke:var(--model)}
 .cycle rect.me{fill:var(--me-bg);stroke:var(--me)}
+.cycle g.node{cursor:pointer;outline:none}
+.cycle g.node:hover rect,.cycle g.node:focus rect{stroke-width:4}
+.cycle g.node:focus-visible rect{stroke:var(--accent)}
 .cycle-notes{display:grid;gap:10px;font-size:14.5px;max-width:52ch}
 .cycle-notes b{font-weight:600}
 
-.wf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-@media (max-width:860px){.wf-cards{grid-template-columns:minmax(0,1fr)}}
-.wcard{text-decoration:none;color:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.wcard:hover{border-color:var(--ink)}
-.wcard h3{font-size:21px;font-weight:700;font-variation-settings:"wdth" 106}
-.wcard p{color:var(--muted);font-size:14px}
-.wcard ul{font-size:14px;display:grid;gap:3px}
-.wcard .go{font-weight:600;color:var(--accent);font-size:14px;margin-top:auto}
+/* phase accordions */
+.pieces{display:grid;gap:10px}
+details.piece{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);scroll-margin-top:72px}
+details.piece[open]{border-color:var(--ink)}
+details.piece.flash{box-shadow:0 0 0 3px var(--accent)}
+details.piece > summary{list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 14px;align-items:center}
+details.piece > summary::-webkit-details-marker{display:none}
+.pnum{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 12.5px var(--mono);color:var(--bg);background:var(--c);grid-row:span 2;align-self:start}
+.pnum.code{--c:var(--code)}.pnum.tool{--c:var(--tool)}.pnum.model{--c:var(--model)}.pnum.me{--c:var(--me)}
+.ps-name{font:700 17px/1.25 var(--display);font-variation-settings:"wdth" 104}
+.ps-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.ps-purpose{grid-column:2/-1;color:var(--muted);font-size:14px;max-width:82ch}
+.inside{grid-column:2/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:2px}
+.inside .comp{font:500 12px var(--mono);color:var(--ink);display:inline-flex;align-items:center;gap:5px}
+.inside .comp i{font-style:normal;color:var(--muted)}
+.inside .mini{width:90px}
+.inside .tog{font:500 12px var(--mono);color:var(--accent);margin-left:auto}
+details.piece[open] .tog .o{display:none}
+details.piece:not([open]) .tog .c{display:none}
+@media (max-width:620px){details.piece > summary{grid-template-columns:auto minmax(0,1fr)}.ps-meta{grid-column:2/-1;justify-content:flex-start}.inside .tog{margin-left:0}}
+.spec{border-top:1px solid var(--line);padding:16px;display:grid;gap:14px;background:var(--bg)}
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.cards3{grid-template-columns:minmax(0,1fr)}}
+.ccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.lab{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.ccard ul{font-size:13.5px;display:grid;gap:4px}
+.stack{display:flex;flex-wrap:wrap;gap:5px}
+.steps{list-style:none;padding:0;border-top:1px solid var(--line)}
+.steps li{display:grid;grid-template-columns:24px 78px minmax(0,1fr);gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.steps .sn{font:500 12px var(--mono);color:var(--muted)}
+.guard{display:grid;gap:4px;font-size:13.5px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
 
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--ink);vertical-align:bottom}
-td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
 td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 th.num{text-align:right}
-table.glance{min-width:760px}
-table.glance td:first-child{font-weight:600;width:19%}
-table.glance td .how{display:block;font:500 11.5px/1.4 var(--mono);color:var(--muted);margin-top:3px;font-weight:500}
 .wt{display:inline-block;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-right:8px;opacity:.75}
 
-.pieces{display:grid;gap:10px}
-details.piece{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
-details.piece[open]{border-color:var(--ink)}
-details.piece > summary{list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:center}
-details.piece > summary::-webkit-details-marker{display:none}
-.ps-name{font:700 17px/1.25 var(--display);font-variation-settings:"wdth" 104}
-.ps-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
-.ps-purpose{grid-column:1/-1;color:var(--muted);font-size:14px;max-width:80ch}
-.ps-toggle{grid-column:1/-1;font:500 12px var(--mono);color:var(--accent)}
-details.piece[open] .ps-toggle .o{display:none}
-details.piece:not([open]) .ps-toggle .c{display:none}
-@media (max-width:620px){details.piece > summary{grid-template-columns:minmax(0,1fr)}.ps-meta{justify-content:flex-start}}
-.spec{border-top:1px solid var(--line);padding:16px;display:grid;gap:18px}
-.io{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-@media (max-width:860px){.io{grid-template-columns:minmax(0,1fr)}}
-.io > div{min-width:0}
-.lab{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.io ul{font-size:13.5px;display:grid;gap:4px}
-.stack{display:flex;flex-wrap:wrap;gap:5px}
-.steps{list-style:none;padding:0;border-top:1px solid var(--line)}
-.steps li{display:grid;grid-template-columns:28px 64px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
-.steps .sn{font:500 12px var(--mono);color:var(--muted)}
-.guard{display:grid;gap:4px;font-size:13.5px}
-.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
-@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+/* collapsible section (data, platform sections) */
+details.fold{border-top:1px solid var(--ink);scroll-margin-top:72px}
+details.fold > summary{list-style:none;cursor:pointer;padding:14px 0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary h3{font-size:20px;font-weight:700;font-variation-settings:"wdth" 104}
+details.fold > summary .sub{font-size:14px}
+details.fold > summary .tog{font:500 12px var(--mono);color:var(--accent);margin-left:auto}
+details.fold[open] > summary .tog .o{display:none}
+details.fold:not([open]) > summary .tog .c{display:none}
+.fold-body{padding:0 0 18px;display:grid;gap:14px}
+.top-link{font:500 12px var(--mono);justify-self:start}
 
+/* rationale */
 .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ink)}
 @media (max-width:860px){.checks{grid-template-columns:minmax(0,1fr)}}
 .ck{padding:12px 16px 14px 0;border-bottom:1px solid var(--line);min-width:0}
@@ -168,10 +219,12 @@ details.piece:not([open]) .ps-toggle .c{display:none}
 .ck h4{font:600 14px/1.3 var(--body)}
 .ck p{font-size:13.5px;color:var(--muted);margin-top:4px}
 
-pre.art{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;overflow-x:auto;font:12.5px/1.6 var(--mono);margin:0}
-pre.art .k{color:var(--code)}pre.art .c{color:var(--muted)}
-
-.princ{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--ink)}
+/* platform toc */
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px}
+.toc a:hover{border-color:var(--ink)}
+.toc a span{font:500 11.5px var(--mono);color:var(--muted)}
+.princ{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--line)}
 @media (max-width:760px){.princ{grid-template-columns:minmax(0,1fr)}}
 .pr{padding:14px 18px 16px 0;border-bottom:1px solid var(--line);display:grid;gap:6px;min-width:0}
 .pr:nth-child(even){padding-left:18px;padding-right:0;border-left:1px solid var(--line)}
@@ -179,42 +232,54 @@ pre.art .k{color:var(--code)}pre.art .c{color:var(--muted)}
 .pr h4{font-size:17px;font-weight:700;font-variation-settings:"wdth" 104}
 .pr p{font-size:14px}
 .pr .ev{font-size:13px;color:var(--muted)}
-.builds{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.bcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:7px;min-width:0}
-.bcard .grp{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.bcard h4{font:600 15.5px/1.3 var(--body)}
-.bcard p{font-size:13.5px;color:var(--muted)}
-.bcard .pat{font-size:13px;color:var(--ink)}
-.bcard a{font-size:13px;margin-top:auto}
-.sketch{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:16px;min-width:0}
-.facts{display:flex;flex-wrap:wrap;gap:6px}
-.measures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-@media (max-width:760px){.measures{grid-template-columns:minmax(0,1fr)}}
-.measures > div{border-top:4px solid var(--code);padding-top:10px;min-width:0}
-.measures > div.me{border-top-color:var(--me)}
-.measures h4{font:600 15px/1.3 var(--body)}
-.measures p{font-size:13.5px;color:var(--muted);margin-top:4px}
-.callout{border-left:3px solid var(--accent);padding:4px 0 4px 14px;font-size:14.5px;max-width:78ch}
+
+/* projects */
+.feature{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:22px;min-width:0}
+.before{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:760px){.before{grid-template-columns:minmax(0,1fr)}.before .arrow{transform:rotate(90deg);justify-self:center}}
+.sys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sys div{background:var(--bg);border:1px dashed var(--muted);border-radius:var(--r);padding:10px 12px;min-width:0}
+.sys b{display:block;font-size:14px}
+.sys span{font-size:12.5px;color:var(--muted)}
+.before .arrow{font:700 28px var(--display);color:var(--accent)}
+.target{background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--r);padding:14px 16px;display:grid;gap:8px}
+.target b{font-size:15px}
+.target ul{font-size:13.5px;display:grid;gap:3px}
+.gates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;align-items:stretch}
+@media (max-width:760px){.gates{grid-template-columns:minmax(0,1fr);gap:10px}}
+.gate{all:unset;box-sizing:border-box;cursor:pointer;position:relative;padding:14px 34px 14px 16px;background:var(--bg);border:1px solid var(--line);border-left:5px solid var(--c);display:grid;gap:4px;min-width:0}
+.gate.code{--c:var(--code)}.gate.model{--c:var(--model)}.gate.me{--c:var(--me)}
+.gate:hover{border-color:var(--ink);border-left-color:var(--c)}
+.gate:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gate .t{font-weight:700;font-size:15.5px}
+.gate .w{font:500 12px var(--mono);color:var(--muted)}
+.gate .g{font-size:13px;display:flex;align-items:center;gap:8px}
+.gate .g::before{content:"";width:10px;height:10px;transform:rotate(45deg);background:var(--accent);display:inline-block;flex:none}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border-top:4px solid var(--code);padding-top:10px;min-width:0}
+.kpi.me{border-top-color:var(--me)}
+.kpi .n{font-size:30px}
+.kpi p{font-size:13px;color:var(--muted);margin-top:4px}
+.kicker{border-left:4px solid var(--accent);background:var(--bg);padding:12px 16px;font-size:14.5px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.gcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.gcard .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.gcard .grp{font:500 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.gcard h4{font:600 15.5px/1.3 var(--body)}
+.gcard p{font-size:13.5px;color:var(--muted)}
+.gcard .stack .chip{font-size:11px}
+.gcard a{font-size:13px;margin-top:auto}
 
 footer{border-top:1px solid var(--line);padding-block:20px 40px;color:var(--muted);font-size:13px}
 footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<header class="top">
+<header class="top" id="top">
   <div class="wrap">
-    <div class="eyebrow">Working notes · updated 20 Oct 2026</div>
     <div class="title-row">
-      <h1>Alex Newton's AI rig</h1>
+      <div><div class="eyebrow">Working notes · updated 20 Oct 2026</div><h1>Alex Newton's AI rig</h1></div>
       <div class="who">Data strategy &amp; operations · Philadelphia<br><a href="https://www.linkedin.com/in/anewt">linkedin.com/in/anewt</a> · <a href="https://github.com/anewt225">github.com/anewt225</a></div>
-    </div>
-    <p class="lede">I run three workflows on Claude, Python and Notion: my weekly operating rhythm, my career pipeline, and personal projects across finances, home and travel. Scripts do the arithmetic, the model does the judgment, and I make every decision that leaves the building. Each phase is documented down to its inputs, process, outputs and stack.</p>
-    <div class="stats">
-      <div class="stat"><div class="n">32</div><div class="l">connectors on my Claude account, plus 3 local MCP servers</div></div>
-      <div class="stat"><div class="n">4</div><div class="l">plugins I wrote: 11 skills, 29 commands, versioned in git</div></div>
-      <div class="stat"><div class="n">25</div><div class="l">tools in my custom TickTick MCP server (Python)</div></div>
-      <div class="stat"><div class="n">7</div><div class="l">scheduled jobs: 3 Claude routines, 4 Windows tasks</div></div>
-      <div class="stat"><div class="n">127</div><div class="l">agent-written reports on file: standups, briefs, retros, plans</div></div>
     </div>
   </div>
 </header>
@@ -223,7 +288,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
   <div class="wrap">
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="legend" aria-label="Who does each step">
-      <span><i class="sw code"></i>Code</span><span><i class="sw model"></i>Model</span><span><i class="sw me"></i>Me</span>
+      <span><i class="sw code"></i>Script</span><span><i class="sw tool"></i>Agent action</span><span><i class="sw model"></i>Agent judgment</span><span><i class="sw me"></i>Me</span>
     </div>
   </div>
 </nav>
@@ -232,18 +297,19 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 
 <footer>
   <div class="wrap">
-    <span>Compiled with Claude Code from the system's own config files, run logs and repos, 20 Oct 2026. Personal finance, tax and health workflows are described by method only.</span>
-    <span style="font-family:var(--mono)">v3.0</span>
+    <span>Compiled with Claude Code from the system's own config files, run logs and repos, 20 Oct 2026. Finance, tax and health work is described by method only.</span>
+    <span style="font-family:var(--mono)">v4.0</span>
   </div>
 </footer>
 
 <script>
 (() => {
-const OWN = {code:"Code", model:"Model", me:"Me"};
+const OWN = {code:"Script", tool:"Action", model:"Judgment", me:"Me"};
 
-/* ===== CYCLE: the agile loop diagram. Self-contained; set to "" to remove it. ===== */
+/* ===== CYCLE: the agile loop diagram. Self-contained; set to "" to remove it. Nodes link to phases via data-phase. ===== */
+const node = (ph, cls, x, y, w, hgt, t, d, tx) => `<g class="node"${ph ? ` data-phase="${ph}" tabindex="0" role="link" aria-label="${t}: open phase"` : ""}><rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${hgt}" rx="10" stroke-width="2.5"/><text x="${tx}" y="${y+26}" text-anchor="middle" font-size="17" font-weight="700">${t}</text><text class="d" x="${tx}" y="${y+47}" text-anchor="middle" font-size="14">${d}</text></g>`;
 const CYCLE = `<div class="cycle-wrap">
-<svg class="cycle" viewBox="0 0 700 660" role="img" aria-label="A daily loop inside a weekly sprint. The productivity sync feeds the daily standup, I do the work, and the next sync picks it up. Seven daily files and Sunday's time tracking feed the weekly retro, then my reflection, then the week-ahead plan, which the next sync reads. A mid-week pulse checks progress.">
+<svg class="cycle" viewBox="0 0 700 660" role="img" aria-label="A daily loop inside a weekly sprint. Select a box to open its phase below.">
 <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs>
 <g fill="none" stroke-width="2.5">
 <path class="arc" d="M458 114 A255 255 0 0 1 596 279" marker-end="url(#ah)"/>
@@ -262,71 +328,59 @@ const CYCLE = `<div class="cycle-wrap">
 <text class="lbl" x="360" y="534" font-size="15">the plan</text>
 <text class="lbl" x="350" y="372" text-anchor="middle" font-size="13" letter-spacing="2">DAILY LOOP</text>
 <text class="lbl" x="690" y="30" text-anchor="end" font-size="13" letter-spacing="2">WEEKLY SPRINT</text>
-<rect class="model" x="250" y="65" width="200" height="60" rx="10" stroke-width="2.5"/><text x="350" y="91" text-anchor="middle" font-size="17" font-weight="700">Weekly retro</text><text class="d" x="350" y="113" text-anchor="middle" font-size="14">Claude · Sun 18:00</text>
-<rect class="me" x="530" y="315" width="150" height="60" rx="10" stroke-width="2.5"/><text x="605" y="341" text-anchor="middle" font-size="17" font-weight="700">Reflection</text><text class="d" x="605" y="363" text-anchor="middle" font-size="14">Me · notebook</text>
-<rect class="me" x="250" y="570" width="200" height="60" rx="10" stroke-width="2.5"/><text x="350" y="596" text-anchor="middle" font-size="17" font-weight="700">Week ahead</text><text class="d" x="350" y="618" text-anchor="middle" font-size="14">Me + Claude · /plan</text>
-<rect class="model" x="20" y="315" width="150" height="60" rx="10" stroke-width="2.5"/><text x="95" y="341" text-anchor="middle" font-size="17" font-weight="700">Mid-week pulse</text><text class="d" x="95" y="363" text-anchor="middle" font-size="14">Claude · Wed</text>
-<rect class="code" x="20" y="14" width="180" height="56" rx="10" stroke-width="2.5"/><text x="110" y="38" text-anchor="middle" font-size="17" font-weight="700">Time tracking</text><text class="d" x="110" y="58" text-anchor="middle" font-size="14">Python · Sun 12:00</text>
-<rect class="model" x="260" y="427" width="180" height="56" rx="10" stroke-width="2.5"/><text x="350" y="451" text-anchor="middle" font-size="17" font-weight="700">Productivity sync</text><text class="d" x="350" y="471" text-anchor="middle" font-size="14">Claude · daily 04:30</text>
-<rect class="model" x="157" y="252" width="176" height="56" rx="10" stroke-width="2.5"/><text x="245" y="276" text-anchor="middle" font-size="17" font-weight="700">Daily standup</text><text class="d" x="245" y="296" text-anchor="middle" font-size="14">Top 3 + brief · 08:00</text>
-<rect class="me" x="367" y="252" width="176" height="56" rx="10" stroke-width="2.5"/><text x="455" y="276" text-anchor="middle" font-size="17" font-weight="700">Do the work</text><text class="d" x="455" y="296" text-anchor="middle" font-size="14">Me · TickTick, Gmail</text>
+${node("rhythm-3","model",250,65,200,60,"Weekly retro","Claude · Sun 18:00",350)}
+${node("rhythm-3","me",530,315,150,60,"Reflection","Me · notebook",605)}
+${node("rhythm-4","me",250,570,200,60,"Week ahead","Me + Claude · /plan",350)}
+${node("rhythm-4","model",20,315,150,60,"Mid-week pulse","Claude · Wed",95)}
+${node("rhythm-2","code",20,14,180,56,"Time tracking","Python · Sun 12:00",110)}
+${node("rhythm-1","model",260,427,180,56,"Productivity sync","Claude · daily 04:30",350)}
+${node("rhythm-1","model",157,252,176,56,"Daily standup","Top 3 + brief · 08:00",245)}
+${node("","me",367,252,176,56,"Do the work","Me · TickTick, Gmail",455)}
 </g></svg>
 <div class="cycle-notes">
 <p><b>Daily loop.</b> The productivity sync pulls what changed since yesterday and writes the daily standup: the top 3 actions and a morning brief. I do the work, and the next sync picks up what moved.</p>
 <p><b>Weekly sprint.</b> Seven daily files and the week's measured time feed the Sunday retro. I reflect on paper, set the week ahead, and Monday's sync reads the plan. A Wednesday pulse checks progress.</p>
 <p><b>Hand-offs are files.</b> Agents never call each other; each run writes a dated file the next one checks for, so any step can be inspected or re-run alone.</p>
+<p class="hint">Select a box to open its phase.</p>
 </div></div>`;
 
-/* ============ DATA ============ */
+/* ============ WORKFLOWS ============ */
 const WF = [
 {
   id:"rhythm", tab:"Weekly rhythm", title:"Weekly operating rhythm",
   card:"Agile ceremonies for one: a productivity sync and daily standup, a Sunday retro and a week-ahead plan, fed by measured time.",
   job:"I treat my week like a sprint. Agents gather the data and draft the ceremonies; I make the calls. Observation without a forcing cadence is just logging.",
   tiles:[["52","daily standups on file since 20 Jul"],["30","weekly retros since 29 Mar"],["8","Python scripts measure where the time went"]],
-  cycle:true,
-  flowTitle:"A week of runs",
-  flowSub:"The same loop as a timeline. Each run writes a dated file, and the next run checks for it before starting.",
-  flow:[
-    ["code","Sun 12:00","Usage exports","Browser, Windows and ActivityWatch data to Parquet"],
-    ["code","Sun 12:20","Summary + dashboard","Rollups and week-over-week deltas in a 2 KB file"],
-    ["model","Sun 18:00","Weekly retro","Scorecard, planned vs actual time, open loops"],
-    ["me","Sun evening","Reflection","Notebook spread, prompted by what the data showed"],
-    ["me","Sun or Mon","Week ahead","Top 5 priorities and dated commitments"],
-    ["model","Daily 04:30–08:00","Sync → standup","Delta sync, top 3 actions, morning brief"],
-    ["model","Wednesday","Mid-week pulse","Priorities checked against progress"],
-  ],
+  mapTitle:"How the ceremonies connect", map:"cycle",
   pieces:[
-    {name:"Productivity sync and daily standup", file:"productivity-sync · morning-brief", trigger:"Claude routines · daily 04:30, brief weekdays 08:00 ET", status:"live",
-     io:["Gmail, Calendar, Notion tasks, TickTick, Drive, last week's plan","Delta sync → classify and log email → edit memory → rank top 3 → render brief","Top 3 actions, Notion message log, memory edits, morning brief, one draft"],
+    {name:"Productivity sync and daily standup", file:"productivity-sync · morning-brief", trigger:"Daily 04:30 · brief weekdays 08:00", status:"live",
      purpose:"One task in two runs: the sync pulls only what changed since yesterday and ranks the top 3 actions; the standup turns that into a one-page morning brief where every suggestion is a proposal.",
      inputs:["Gmail: job-search query scoped to after the last sync","Google Calendar: today and the next 7 days","Notion Job Search Tasks and Contacts","TickTick via my MCP server","Google Drive: recently changed documents","Latest retro and week-ahead plan","Readwise highlights; Hunter.io only when Notion has no candidate"],
-     outputs:["<code>CLAUDE.md</code> “Top 3 Actions Today” block","<code>daily-outputs/YYYY-MM-DD-sync.md</code>","Notion Communications pages linked to contact, company, opportunity and sprint","<code>memory/</code> people, project and context files","<code>Morning-Brief/YYYY-MM-DD.html</code> and one Gmail draft (6-point email)","<code>synced-threads.txt</code> dedupe ledger"],
+     outputs:["<code>CLAUDE.md</code> “Top 3 Actions Today” block","<code>daily-outputs/YYYY-MM-DD-sync.md</code>","Notion Communications pages linked to contact, company, opportunity and sprint","<code>memory/</code> people, project and context files","<code>Morning-Brief/YYYY-MM-DD.html</code> and one Gmail draft","<code>synced-threads.txt</code> dedupe ledger"],
      stack:["Claude Sonnet 5 (sync)","Claude Opus 5 (brief)","Claude routines","Notion MCP","Gmail MCP","Calendar MCP","TickTick MCP","Markdown, HTML"],
      steps:[
-       ["code","Read the current-state file and two ledgers only"],
+       ["tool","Read the current-state file and two ledgers only"],
        ["model","Quiet-day check: new actionable email, calendar change or weekly file? If none, log one line, refresh the top 3 and stop"],
-       ["code","Pull deltas from Notion, TickTick and Drive since the last sync"],
+       ["tool","Pull deltas from Notion, TickTick and Drive since the last sync"],
        ["model","Classify each new email thread from its body: cold outreach, follow-up, thank-you, scheduling…"],
-       ["code","Skip thread IDs already in the ledger; create Notion pages with their relations; append the IDs"],
+       ["tool","Skip thread IDs already in the ledger; create Notion pages with their relations; append the IDs"],
        ["model","Fold in a new retro or plan, overwriting any standing advice it corrects; edit memory surgically"],
        ["model","Rank the top 3: overdue follow-ups, replies owed, 48-hour deadlines. Conversations win ties; items stuck 3+ days get flagged"],
-       ["code","Write the dated daily file; rotate log entries older than 30 days"],
-       ["code","Standup: wait for today's file (3 × 5 minutes), else use the latest and label its date"],
+       ["tool","Write the dated daily file; rotate log entries older than 30 days"],
+       ["tool","Standup: wait for today's file (3 × 5 minutes), else use the latest and label its date"],
        ["model","Render the brief: top 3, one deep-work block, a proposed time-blocked day, one outreach draft checked against Sent and Drafts"],
      ],
      guard:["Never sends, accepts or messages anyone; drafts only","First output must be a tool call; a greeting counts as a failed run","Links to existing contacts only; never creates one","Nothing is deleted: closed items move to topic files and archives"]},
-    {name:"Time tracking", file:"usage pipeline", trigger:"Windows Task Scheduler · Sun 12:00 and 12:20", status:"live",
-     io:["ActivityWatch API, three browsers' history, Windows logs, phone exports, Claude session logs","Export to dated Parquet → reconcile → precompute summary → rebuild dashboard","Parquet per source, a 2 KB summary with deltas, a self-contained dashboard"],
+    {name:"Time tracking", file:"usage pipeline", trigger:"Windows Task Scheduler · Sun 12:00", status:"live",
      purpose:"Measures where time actually went across a laptop and two phones. Its only job is to feed the retro's planned-vs-actual comparison.",
-     inputs:["ActivityWatch REST API on localhost: window, idle and browser watchers","Chrome, Vivaldi and Brave history (SQLite, copied while locked)","Windows System and Security event logs: logon, logoff, unlock, boot","Phone usage exports dropped in an inbox folder","Claude Code session logs (JSONL)"],
+     inputs:["ActivityWatch REST API on localhost: window, idle and browser watchers","Chrome, Vivaldi and Brave history (SQLite, copied while locked)","Windows System and Security event logs","Phone usage exports dropped in an inbox folder","Claude Code session logs (JSONL)"],
      outputs:["Dated Parquet per source: apps, sites, hours, focus blocks, browsers, sessions, phones","<code>usage-summary_YYYY-MM-DD.md</code> + <code>.json</code>, about 2 KB","<code>usage-dashboard.html</code>, self-contained"],
-     stack:["Python 3.14","uv venv","pandas 3","pyarrow","SQLite","ActivityWatch","JSON regex rules, 14 categories","Task Scheduler"],
+     stack:["Python 3.14","uv venv","pandas 3","pyarrow","SQLite","ActivityWatch","JSON regex rules","Task Scheduler"],
      steps:[
        ["code","Export 7 days from each source to dated Parquet (4 scripts)"],
        ["code","Import phone and Claude-session data; reconcile overlapping phone exports by per-app maximum"],
        ["code","Wait up to 20 minutes for today's exports; flag each source STALE or MISSING with its coverage dates"],
-       ["code","Compute category hours, sessions, browser split and deltas into the summary"],
+       ["code","Compute category hours, sessions, browser split and week-over-week deltas into the summary"],
        ["code","Rebuild the dashboard from every snapshot; newest wins where weeks overlap"],
      ],
      guard:["Launchers return the real exit code; a missing interpreter logs the fix","Category changes are dry-run against every domain before they ship"],
@@ -336,87 +390,64 @@ const WF = [
        ["A Python uninstall broke every run while the scheduler reported success","Dedicated venv; real exit code passed through"],
        ["Claude session time came out at 586% of measured app time","Span is not active time; report the topic split only"],
      ]},
-    {name:"Weekly retro", file:"weekly-review", trigger:"Claude routine · Sun 18:00 ET", status:"live",
-     io:["Seven daily sync files, the usage summary, Calendar, Gmail, Notion, Fireflies, prior retros","Interpret the summary → score the week → compare with prior weeks → write the narrative","Review, JSON scorecard, Notion row, 3–5 reflection prompts"],
+    {name:"Weekly retro and reflection", file:"weekly-review · /capture", trigger:"Sunday 18:00, then my notebook", status:"live",
      purpose:"Drafts the Sunday retro: the scorecard first, then planned vs actual time, open loops and an honest assessment. Then it hands off to my notebook.",
-     inputs:["Usage summary (read, never recomputed)","Google Calendar: planned time, bucketed","Gmail: four queries including Sent","Notion pipeline and tasks","Fireflies transcripts","Claude sessions and Drive changes","Prior retros"],
-     outputs:["<code>weekly-reviews/YYYY-MM-DD-review.md</code>","<code>weekly-data/YYYY-MM-DD.json</code>: scorecard, priorities, open loops","Notion Weekly Reviews row","3–5 reflection prompts"],
+     inputs:["Seven daily sync files","Usage summary (read, never recomputed)","Google Calendar: planned time, bucketed","Gmail: four queries including Sent","Notion pipeline, Fireflies transcripts, prior retros"],
+     outputs:["<code>weekly-reviews/YYYY-MM-DD-review.md</code>","<code>weekly-data/YYYY-MM-DD.json</code>: scorecard, priorities, open loops","Notion Weekly Reviews row","3–5 reflection prompts; my reflection archived as data"],
      stack:["Claude Opus 5","Claude routine","Fireflies MCP","Notion MCP","Gmail MCP","Calendar MCP","Markdown + JSON"],
      steps:[
        ["model","Interpret the usage summary: categories, cross-source checks, at most five insights"],
-       ["model","Build the scorecard: conversations had (evidence required), scheduled, outreach, applications"],
+       ["model","Build the scorecard: conversations had (evidence required), scheduled, outreach, applications; unknown is null"],
        ["model","Compare with prior weeks: completion rate, recurring open loops, time trends"],
        ["model","Write the narrative and choose reflection prompts from what the data showed"],
        ["me","Handwritten reflection on the notebook's two-page spread"],
        ["model","<code>/capture</code> reads a photo of the spread and archives it as structured data"],
      ],
      guard:["Unknown figures are null, never 0","A conversation counts as had only with evidence it happened"]},
-    {name:"Week ahead and mid-week pulse", file:"weekly-rhythm plugin", trigger:"/weekly-rhythm:plan · /weekly-rhythm:pulse", status:"demand",
-     io:["The retro and its JSON, my handwritten reflection, Notion sprints, Calendar","I pick the top 5 → Claude proposes dates and time blocks → Monday's sync folds it in","Week-ahead plan; a Wednesday progress check"],
+    {name:"Week ahead and mid-week pulse", file:"weekly-rhythm plugin", trigger:"/plan · /pulse", status:"demand",
      purpose:"Turns the retro and my reflection into the week's priorities, then checks them on Wednesday.",
      inputs:["This week's retro and its JSON","My handwritten reflection","Notion sprints and tasks","Calendar"],
-     outputs:["<code>weekly-plans/YYYY-MM-DD-plan.md</code>: top 5, secondary goals, dated commitments","Folded into Monday's sync once, tracked in <code>last-weekly-incorporated.txt</code>"],
+     outputs:["<code>weekly-plans/YYYY-MM-DD-plan.md</code>: top 5, secondary goals, dated commitments","Folded into Monday's sync once, tracked in <code>last-weekly-incorporated.txt</code>","A Wednesday progress check"],
      stack:["Claude","weekly-rhythm plugin","Notion MCP","Markdown"],
      steps:[
        ["me","Choose the week's top 5 priorities"],
        ["model","Propose secondary goals, dated commitments and time blocks"],
-       ["code","The next sync folds the plan in once, tracked in a ledger"],
+       ["tool","The next sync folds the plan in once, tracked in a ledger"],
        ["model","Wednesday pulse compares progress with the plan"],
      ],
      guard:["Planning decisions stay mine; the model proposes"]},
   ],
-  checks:[
+  rationale:[
     ["Why automate it","Daily and weekly, context-heavy, and easy to review. Most of my old review time went to gathering, not deciding."],
     ["Setup","One state folder per domain, connectors scoped by each routine's step file, and a permission mode per routine."],
-    ["Evaluate","Evidence rules for every count, STALE and MISSING flags, and a stall flag when an action tops the list three days running."],
-    ["Optimize","Quiet-day exit, ledger dedupe, tail-only log reads, a 2 KB precomputed summary, and an archive moved out of the state file (23% less input per run)."],
-    ["Measure","North star: conversations held per week, target 5. On file: 52 standups, 31 briefs, 30 retros, 14 plans."],
+    ["Quality controls","Evidence rules for every count, STALE and MISSING flags, and a stall flag when an action tops the list three days running."],
+    ["Cost and speed","Quiet-day exit, ledger dedupe, tail-only log reads, a 2 KB precomputed summary, and an archive moved out of the state file (23% less input per run)."],
+    ["How I measure it","North star: conversations held per week, target 5. On file: 52 standups, 31 briefs, 30 retros, 14 plans."],
     ["Next","Move the top-3 ranking into a scored function in code, and add a catch-up when the laptop misses Sunday noon."],
-  ],
-  artifact:{title:"Data contract: the weekly scorecard", sub:"Written by the retro every Sunday so the trend is machine-readable. Null means unknown; 0 means zero.",
-    pre:`<span class="k">"job_search_scorecard"</span>: {
-  <span class="k">"conversations_had"</span>:        int | null,  <span class="c">// evidence required: transcript or held event</span>
-  <span class="k">"conversations_had_target"</span>: 5,
-  <span class="k">"conversations_scheduled"</span>:  int | null,  <span class="c">// booked, not yet held</span>
-  <span class="k">"outreach_conducted"</span>:       int | null,  <span class="c">// messages sent: email, LinkedIn, DM</span>
-  <span class="k">"cold_applications"</span>:        int | null,
-  <span class="k">"cold_applications_cap"</span>:    int          <span class="c">// a ceiling, not a goal</span>
-}`}
+  ]
 },
 {
   id:"career", tab:"Career", title:"Career pipeline",
-  card:"Roles, people and events: capture, tailoring, networking events, outreach, interviews and LinkedIn, tracked in one Notion data model.",
-  job:"Every role gets captured once, every document gets scored before and after I change it, every event gets vetted before I go, and every conversation ends with a logged follow-up. The metric is conversations held, not applications sent.",
+  card:"Capture, tailor, apply, network at events and one to one, interview, and keep the profile sharp: tracked in one Notion data model.",
+  job:"Every role gets captured once, every document gets scored before and after I change it, every event gets vetted before I go, and every conversation ends with a logged follow-up. The metric is conversations held, not applications sent. <code>/today</code> ranks the next actions across all seven phases.",
   tiles:[["13","commands across 4 skills in one plugin"],["7","linked Notion databases"],["6","networking events prepped since September"]],
-  flowTitle:"The pipeline",
-  flowSub:"Left to right. The daily sync logs every job-search email into Notion, and <code>/today</code> ranks the next actions across all of it.",
-  flow:[
-    ["code","Capture","Save the role","Reader “jobs” tag → Notion"],
-    ["model","Tailor","/assess → /tailor","Score, rewrite, score again"],
-    ["me","Apply","/apply","Logged with a named person attached"],
-    ["model","Events","Vet → prep","Go or skip, ranked sessions, people brief"],
-    ["model","Reach out","/outreach","6-point emails from the CRM"],
-    ["model","Interview","/prep → /practice","Brief, CAR stories, mock rounds"],
-    ["model","Debrief","/debrief","Rating, Notion records, thank-you"],
-  ],
+  mapTitle:"The pipeline", map:"pipe",
   pieces:[
-    {name:"Capture and track", file:"job capture · /apply · sync logging", trigger:"Daily scheduled run · /apply on demand", status:"off", note:"Capture run inactive: unattended runs stall on a write approval",
-     io:["Saved postings (Reader “jobs” tag), posting URLs, Gmail threads","Parse posting → look up company → dedupe by URL → create with relations","Notion opportunities, companies and message log; Reader tags"],
+    {step:"Capture", how:"Reader → Notion", name:"Capture", file:"job capture · sync logging", trigger:"Daily scheduled run", status:"off", note:"Inactive: unattended runs stall on a write approval",
      purpose:"Gets every role and every job-search conversation into Notion once, with no duplicates.",
      inputs:["Readwise Reader items tagged <code>jobs</code>","Posting URLs from Lever, Greenhouse, Ashby and others","Gmail threads, logged by the daily sync"],
-     outputs:["Notion Opportunities: role, company relation, status, priority","Notion Companies, created only after a lookup","Notion Communications","Reader tags: <code>notion-synced</code>, <code>duplicate-req</code>, <code>bad-capture</code>"],
+     outputs:["Notion Opportunities: role, company relation, status, priority","Notion Companies, created only after a lookup","Reader tags: <code>notion-synced</code>, <code>duplicate-req</code>, <code>bad-capture</code>"],
      stack:["Readwise Reader MCP","Notion MCP","Gmail MCP","Claude"],
      steps:[
-       ["code","Pull postings tagged “jobs” from Reader"],
+       ["tool","Pull postings tagged “jobs” from Reader"],
        ["model","Parse each posting into role fields: title, level, location, requirements"],
-       ["code","Look up the company before creating it; dedupe by posting URL"],
-       ["code","Create the opportunity with its relations; tag the Reader item synced, duplicate or bad capture"],
+       ["tool","Look up the company before creating it; dedupe by posting URL"],
+       ["tool","Create the opportunity with its relations; tag the Reader item synced, duplicate or bad capture"],
      ],
      guard:["Never creates a duplicate opportunity or company","Until the approval is fixed, capture runs by hand"]},
-    {name:"Resume and cover letter", file:"resume-assess skill", trigger:"/assess · /tailor", status:"demand",
-     io:["Resume or letter, the posting, experience bank, framework notes","Score → tailor (GLORY bullets, Pareto letter) → re-score","Tailored .docx and a before/after report per dimension"],
+    {step:"Tailor", how:"/assess → /tailor", name:"Tailor", file:"resume-assess skill", trigger:"/assess · /tailor", status:"demand",
      purpose:"Scores a resume or cover letter against a posting, tailors it, then scores it again so every change is measured.",
-     inputs:["Resume or cover letter (.docx or .md)","The posting: URL fetched, or pasted text","Experience bank and past submissions","Framework notes from my career-book library, synced from Drive by <code>/sync</code>"],
+     inputs:["Resume or cover letter (.docx or .md)","The posting: URL fetched, or pasted text","Experience bank and past submissions","Framework notes from my career-book library, synced from Drive"],
      outputs:["Assessment report: before and after, per dimension","Tailored resume and cover letter (.docx) in the company and role folder"],
      stack:["Claude","resume-assess skill","Google Drive MCP","Word (.docx)"],
      steps:[
@@ -426,90 +457,90 @@ const WF = [
        ["model","Re-score and report the change per dimension"],
        ["me","Review, edit and decide what goes out"],
      ],
-     rubric:{title:"Resume rubric", note:"Composite = resume quality 40% + posting fit 60%. Fit is scored on requirements, responsibilities and keyword match.",
+     rubric:{title:"Resume rubric", note:"Composite = resume quality 40% + posting fit 60%.",
        rows:[["Experience",25],["Formatting and ATS",15],["GLORY score",15],["Summary",12],["Contact info",10],["Skills and additional",8],["Education",5],["Certifications",5],["Visual balance",5]]},
      rubric2:{title:"Cover letter rubric", note:"Composite = letter quality 50% + posting alignment 50%.",
        rows:[["Opening hook",20],["Evidence",20],["Keyword integration",15],["Narrative arc",15],["Tone and voice",10],["Structure and length",10],["Closing and call to action",10]]}},
-    {name:"Networking events", file:"event-prep skill (drafted from 6 real runs)", trigger:"An event link · evaluate, prep, debrief, follow up", status:"demand",
-     io:["Event page, ticket email, both calendars, Notion contacts, LinkedIn connections, book notes","Vet the ticket and the room → rank sessions → tier people → brief → calendar → debrief → follow up","Go/skip call, a dated brief, linked calendar blocks, debrief notes, follow-ups in Notion"],
+    {step:"Apply", how:"/apply", name:"Apply", file:"/apply command", trigger:"/apply", status:"demand",
+     purpose:"Logs each application with the posting's key details and a named person attached, then sets the follow-up.",
+     inputs:["Company and role","Posting URL, fetched for requirements, team and location","The named person: referral, hiring manager or recruiter"],
+     outputs:["Notion opportunity: status Applied, date, source, key requirements","A follow-up date one week out","The current count of active applications"],
+     stack:["Claude","Notion MCP","Web fetch"],
+     steps:[
+       ["tool","Parse company, role and posting URL"],
+       ["model","Pull the key requirements from the posting"],
+       ["tool","Create the Notion record with status, date and source"],
+       ["model","Suggest the follow-up date and report the pipeline count"],
+       ["me","Submit, with a named person attached"],
+     ],
+     guard:["Applications are capped each week; no blind submits"]},
+    {step:"Network: Events", how:"Vet → prep → debrief", name:"Network: Events", file:"event-prep skill (drafted from 6 real runs)", trigger:"An event link", status:"demand",
      purpose:"Decides whether an event is worth the time, preps the people and sessions that matter, then turns the conversations into follow-ups.",
-     inputs:["Event page: agenda, speakers, sponsors (fetched; browser if the page is JavaScript)","Ticket confirmation in Gmail: what the pass actually includes","Personal and career calendars: conflicts and the week's load","Notion contacts and target-company list; LinkedIn connections export","Networking book notes and Readwise highlights"],
-     outputs:["Attend, partial or skip, with the job-search, community and content value stated","A dated brief in the Networking folder: ranked sessions, tiered people, one hook question each","Calendar blocks that link back to the brief","Debrief notes from a template; follow-up drafts and new contacts in Notion"],
+     inputs:["Event page: agenda, speakers, sponsors","Ticket confirmation in Gmail: what the pass actually includes","Personal and career calendars","Notion contacts, target companies, LinkedIn connections export","Networking book notes and Readwise highlights"],
+     outputs:["Attend, partial or skip, with the value stated","A dated brief: ranked sessions, tiered people, one hook question each","Calendar blocks that link back to the brief","Debrief notes; follow-up drafts and new contacts in Notion"],
      stack:["Claude","Gmail MCP","Calendar MCP","Notion MCP","Hunter.io MCP","Readwise MCP","Built-in browser","Markdown"],
      steps:[
-       ["code","Fetch the event page and find the ticket email; check both calendars for conflicts"],
+       ["tool","Fetch the event page and find the ticket email; check both calendars for conflicts"],
        ["model","Evaluate the room against my targets: attend, partial or skip"],
        ["model","Score every session MUST, HIGH, MEDIUM, LOW or SKIP"],
        ["model","Tier speakers and attendees by helpfulness × influence; research the top tiers"],
-       ["code","Look up emails for the top tier only; mark any inferred identity as inferred"],
-       ["code","Write the brief, then calendar blocks that link to it"],
+       ["tool","Write the brief, then calendar blocks that link to it"],
        ["me","Go, and have the conversations"],
        ["model","Debrief from the template; draft follow-ups and update Notion contacts"],
        ["me","Send the follow-ups"],
      ],
      rubric:{title:"Session ranking", note:"Unstructured time is where conversations happen, so breaks and receptions usually rank highest.", scale:[
-       ["MUST / HIGH","Breakfast, lunch, breaks and receptions; speakers from target companies; interactive formats where I can show a strength"],
+       ["MUST / HIGH","Breaks and receptions; speakers from target companies; interactive formats where I can show a strength"],
        ["+1 tier","Content I can reuse in a post or my positioning"],
        ["LOW","Generic keynotes with no named speaker"],
-       ["SKIP","Sessions outside my lane, or not on my pass (stated as the reason)"]]}},
-    {name:"Networking and outreach", file:"/outreach · morning brief", trigger:"/outreach · weekday brief", status:"demand",
-     io:["Notion Contacts CRM; Hunter.io for people not yet in Notion","Pick the format → draft in my voice → dedupe against Sent and Drafts","Gmail drafts, three per sitting; logged to Notion once sent"],
-     purpose:"Drafts outreach in proven formats, working through the CRM in priority order.",
-     inputs:["Notion Contacts CRM, the system of record","Optional tiered contact file","Hunter.io for people not yet in Notion: find, domain search, verify","Target-company list"],
-     outputs:["Gmail drafts, three per sitting by default","Notion Communications entries once sent (logged by the sync)","New leads created in Notion once they're real"],
+       ["SKIP","Outside my lane, or not on my pass"]]}},
+    {step:"Network: Individuals", how:"/outreach", name:"Network: Individuals", file:"/outreach · morning brief", trigger:"/outreach · weekday brief", status:"demand",
+     purpose:"Drafts one-to-one outreach in proven formats, working through the CRM in priority order.",
+     inputs:["Notion Contacts CRM, the system of record","Optional tiered contact file","Hunter.io for people not yet in Notion","Target-company list"],
+     outputs:["Gmail drafts, three per sitting by default","Notion Communications entries once sent","New leads created in Notion once they're real"],
      stack:["Notion MCP","Hunter.io MCP","Gmail MCP","Claude"],
      steps:[
-       ["code","Read contacts and their status: new lead, contacted, met, chatted"],
+       ["tool","Read contacts and their status: new lead, contacted, met, chatted"],
        ["model","Choose the format: 6-point email, warm reconnect, referral ask or follow-up"],
        ["model","Draft in my voice after checking Sent and Drafts for duplicates"],
        ["me","Send"],
      ],
-     guard:["Draft only. An unsent draft is an open loop, so drafts are capped per sitting","Automations never read the HubSpot mirror"]},
-    {name:"Interviews: prep, practice, debrief", file:"interview-debrief skill", trigger:"/prep · /practice · /debrief", status:"demand",
-     io:["Posting, company research, story bank, Fireflies transcript, my self-rating","Brief → mock rounds → transcript scored against CAR, FIT, TIARA","Prep brief, Notion interview page, tasks, thank-you draft"],
+     guard:["Draft only; drafts are capped per sitting because an unsent draft is an open loop","Automations never read the HubSpot mirror"]},
+    {step:"Interview", how:"/prep → /practice → /debrief", name:"Interview", file:"interview-debrief skill", trigger:"/prep · /practice · /debrief", status:"demand",
      purpose:"Prepares each round, rehearses answers, then turns the recording into an assessment, updated records and a thank-you draft in one pass.",
      inputs:["Company research and the posting","My interview-story bank (CAR format)","Fireflies transcript fetched by ID, with timestamps","My 3-question self-assessment, collected before the model's analysis"],
      outputs:["Prep brief","Notion Interviews page: rating, questions asked with timestamp links, lessons learned","Updates to Contacts, Opportunities and Tasks","Gmail thank-you draft, 150–250 words"],
      stack:["Fireflies MCP","Notion MCP","Gmail MCP","Claude"],
      steps:[
-       ["model","<code>/prep</code>: a consultative brief and CAR stories mapped to the role"],
-       ["model","<code>/practice</code>: live mock or recorded-answer review with CAR feedback"],
-       ["code","<code>/debrief</code> pre-flight: find the interview in Notion and confirm the match before creating anything"],
+       ["model","Prep: a consultative brief and CAR stories mapped to the role"],
+       ["model","Practice: live mock or recorded-answer review with CAR feedback"],
+       ["tool","Debrief pre-flight: find the interview in Notion and confirm the match before creating anything"],
        ["me","Self-assessment first, so the comparison stays honest"],
        ["model","Score answers against CAR, FIT and TIARA; rate the round 1–5"],
        ["model","Draft the thank-you note and propose follow-up tasks"],
        ["me","Approve the tasks and send the note"],
      ],
-     rubric:{title:"Interview rating", note:"Answers are checked against CAR (Challenge, Action, Result) for behavioral questions, FIT for “tell me about yourself” (under 2 minutes, three beats) and TIARA for the questions I ask.", scale:[
-       ["5 · Excellent","Every answer had strong CAR with quantified results; natural rapport; consultative questions; clear next steps"],
+     rubric:{title:"Interview rating", note:"CAR for behavioral answers, FIT for “tell me about yourself”, TIARA for the questions I ask.", scale:[
+       ["5 · Excellent","Strong CAR with quantified results throughout; natural rapport; consultative questions"],
        ["4 · Very good","Most answers structured with specific examples; minor gaps"],
        ["3 · Good","Relevant answers, some missing structure or results"],
        ["2 · Fair","Several vague or rambling answers; weak questions"],
        ["1 · Poor","Unprepared or off-topic; no rapport or questions"]]}},
-    {name:"LinkedIn profile", file:"linkedin-rehab skill", trigger:"/li-score · /li-rewrite · /li-todos · /li-reeval", status:"demand",
-     io:["Profile export, target role, keywords harvested from postings","Score against the rubric → advisory panel → rewrites → export tasks","Audit, 3–5 named rewrites per section, TickTick or Notion tasks"],
-     purpose:"Scores the profile against a target role, rewrites the weak sections, exports the fixes as tasks, and re-checks later.",
+    {step:"Brand", how:"/li-score → /li-todos", name:"Brand", file:"linkedin-rehab skill", trigger:"/li-score · /li-rewrite · /li-todos · /li-reeval", status:"demand",
+     purpose:"Keeps the LinkedIn profile aligned to the target role: scores it, rewrites the weak sections, exports the fixes as tasks, and re-checks later.",
      inputs:["Profile export or pasted sections","Target role","Keywords harvested from postings","A cached methodology file, refreshed quarterly"],
-     outputs:["Audit report","3–5 named rewrites per section","Tasks in TickTick, Notion or CSV (<code>make_todos.py</code>)"],
+     outputs:["Audit report","3–5 named rewrites per section","Tasks in TickTick, Notion or CSV"],
      stack:["Claude","Python","TickTick MCP","Notion MCP"],
      steps:[
        ["model","Score each item 0–4, weighted to 100, then a seven-advisor panel critiques"],
        ["model","Draft alternatives in my voice"],
-       ["code","Export the action plan as tasks"],
+       ["code","Export the action plan as tasks (<code>make_todos.py</code>)"],
        ["model","Re-check against the prior audit: what shipped, what moved"],
      ],
      rubric:{title:"LinkedIn rubric", note:"Each item is scored 0 (absent) to 4 (exemplary), then weighted.",
        rows:[["Discoverability",32],["Relevance and depth",26],["Credibility and proof",22],["Human filter",12],["Engagement signals",8]]}},
   ],
-  checks:[
-    ["Why automate it","High frequency and high context: every role needs tailoring, every event needs vetting, every conversation needs a follow-up."],
-    ["Setup","Seven linked Notion databases, frameworks defined once inside the plugin, and the target role passed in as a parameter."],
-    ["Evaluate","Rubrics for resumes, cover letters, LinkedIn and interviews, scored before and after; a ranking rubric for event sessions."],
-    ["Optimize","Research is cached in methodology files and refreshed quarterly instead of re-derived on every run."],
-    ["Measure","Conversations held per week, target 5. Applications are a cap, reported last."],
-    ["Next","Fix the capture run's write approval, ship the event skill as a command, and let /prep read the story database."],
-  ],
-  artifact:{title:"Data model: seven Notion databases", sub:"Every automation reads and writes through these relations. Notion wins any disagreement with another tool.",
+  data:{title:"Data model: seven Notion databases", sub:"Every automation reads and writes through these relations. Notion wins any disagreement.",
     table:{head:["Database","Key fields","Links to"], rows:[
       ["Opportunities","Role title, status, priority, posting URL","Company · Contacts · Interviews · Tasks"],
       ["Companies","Name","Opportunities · Contacts"],
@@ -518,29 +549,26 @@ const WF = [
       ["Interviews","Status, type, rating 1–5, questions asked, lessons","Opportunity · Contacts · Tasks"],
       ["Tasks","Name, status, category, due date (kept flat)","Opportunity · Interview · Company"],
       ["Sprints","Dates, status, outreach and conversation rollups","Communications"],
-    ]}}
+    ]}},
+  rationale:[
+    ["Why automate it","High frequency and high context: every role needs tailoring, every event needs vetting, every conversation needs a follow-up."],
+    ["Setup","Seven linked Notion databases, frameworks defined once inside the plugin, and the target role passed in as a parameter."],
+    ["Quality controls","Rubrics for resumes, cover letters, LinkedIn and interviews, scored before and after; a ranking rubric for event sessions."],
+    ["Cost and speed","Research is cached in methodology files and refreshed quarterly instead of re-derived on every run."],
+    ["How I measure it","Conversations held per week, target 5. Applications are a cap, reported last."],
+    ["Next","Fix the capture run's write approval, ship the event skill as a command, and let Interview read the story database."],
+  ]
 },
 {
   id:"personal", tab:"Personal", title:"Personal projects: finances, home, travel",
   card:"A reconciled monthly finance check-in, a tax filing assistant, a photo-maintained kitchen inventory, and travel builds from panoramas to an audio tour.",
   job:"Anything that has to be exact is code; Claude interprets and drafts; I decide. Finance, tax and health work is described by method only.",
   tiles:[["4","project areas: finances, taxes, home, travel"],["~190","items in a kitchen inventory kept current from photos"],["2,394","travel photos time-corrected and geotagged"]],
-  flowTitle:"The monthly finance check-in",
-  flowSub:"Raw exports in, one reconciled ledger out. Everything up to the report is deterministic.",
-  flow:[
-    ["code","Ingest","Exports land","CSV and PDF statements by account"],
-    ["code","Normalize","One schema","Dates, signs and card conventions fixed"],
-    ["code","Classify","Flow type","Income, purchase, payment, transfer…"],
-    ["code","Dedupe","Row hash","Re-running never duplicates"],
-    ["code","Reconcile","Balance check","Every account vs its statement"],
-    ["model","Report","Check-in","Net worth, budget vs actual, runway"],
-    ["me","Decide","My call","What changes next month"],
-  ],
+  mapTitle:"Four areas", map:"areas",
   pieces:[
-    {name:"Monthly Finances Check-In", file:"finance pipeline v2 · check-in skill", trigger:"Monthly, when statements land", status:"demand",
-     io:["YTD account statements and exports, account terms, last month's summary and tasks","Python: parse → normalize → hash-dedupe → reconcile; Claude explains variances","HTML dashboard, Excel snapshot, TickTick tasks, Notion summary"],
+    {short:"Reconciled ledger, net worth, runway", name:"Monthly Finances Check-In", file:"finance pipeline v2 · check-in skill", trigger:"Monthly, when statements land", status:"demand",
      purpose:"Turns raw account exports into one ledger, reconciles it, and produces net worth, budget vs actual and runway.",
-     inputs:["CSV exports and PDF statements from several banks, cards and payment apps","Account terms and conditions documents","Last month's summary and open tasks","A balances file and a conscious-spending budget"],
+     inputs:["YTD statements and CSV exports from several banks, cards and payment apps","Account terms and conditions documents","Last month's summary and open tasks","A balances file and a conscious-spending budget"],
      outputs:["Master transaction ledger (CSV, one schema) and a reconcile report (JSON)","Excel snapshot: net worth, budget vs actual, runway","HTML trend dashboards","TickTick tasks and a Notion summary"],
      stack:["Python","csv + hashlib","Excel","HTML","TickTick MCP","Notion MCP","Claude"],
      steps:[
@@ -553,39 +581,36 @@ const WF = [
        ["me","Decide what changes"],
      ],
      guard:["No account numbers or credentials in any file","Statements reconcile the ledger, never the reverse"]},
-    {name:"State & Federal Tax Filing Assistant", file:"plugin · 5 skills, 5 commands", trigger:"On demand, during tax season", status:"demand",
-     io:["Tax code references, W-2s, other forms pulled in as needed","Document checklist → calculations in code → step-by-step guidance","Ready-to-file PDFs, TickTick tasks, a step-by-step guide in Markdown"],
+    {short:"Documents, math in code, filing steps", name:"State & Federal Tax Filing Assistant", file:"plugin · 5 skills, 5 commands", trigger:"On demand, during tax season", status:"demand",
      purpose:"Organizes a state, city and federal filing: which documents are needed, the calculations, and the steps to file.",
      inputs:["Basic tax code and form instructions","W-2s and other income forms","Additional documents requested as the return takes shape"],
      outputs:["Ready-to-file PDFs","Step-by-step filing guidance in Markdown","TickTick tasks for anything outstanding"],
-     stack:["Claude","Custom plugin","Python","Markdown","TickTick MCP"],
+     stack:["Claude","Custom plugin","Markdown","TickTick MCP"],
      steps:[
        ["model","Inventory the documents and list what's missing"],
-       ["code","Run the calculations from the published rules"],
+       ["model","Work the calculations from the published rules, showing each step"],
        ["model","Write the filing steps and flag decisions for me"],
        ["me","Review and file"],
      ],
      guard:["Described by method only; no figures on this page","Every decision and the filing itself are mine"]},
-    {name:"Home and health", file:"kitchen-inventory skill · scripts", trigger:"Photos and receipts as they arrive · loggers", status:"demand",
-     io:["Grocery receipts, kitchen-zone photos, recipe chats, wearable data, network logs","Claude reads photos into Notion after my approval; Python loggers","Kitchen inventory, grocery list, recipes, health notes, ISP evidence log and emails"],
-     purpose:"Smaller loops on the same pattern: a kitchen inventory that cuts food waste, health check-ins, and a home-network evidence log.",
-     inputs:["Photos of each kitchen zone and grocery receipts or order emails","Recipe conversations","Wearable API (Python script) and a sleep log","A continuous network-loss logger that starts with the machine"],
-     outputs:["Notion kitchen inventory: item, size, amount left, location, status, restock","Grocery list in TickTick or Google Keep, driven by the restock flag","Recipes and batch-cooking plans from what's on hand","Conversational health check-ins","A dated network evidence log and emails to the provider"],
+    {short:"Kitchen inventory, health, network log", name:"Home and health", file:"kitchen-inventory skill · scripts", trigger:"Photos and receipts as they arrive", status:"demand",
+     purpose:"A kitchen inventory that cuts food waste, health check-ins, and a home-network evidence log.",
+     inputs:["Photos of each kitchen zone; grocery receipts or order emails","Recipe conversations","Wearable API (Python script) and a sleep log","A continuous network-loss logger"],
+     outputs:["Notion kitchen inventory: item, size, amount left, location, status, restock","Grocery list in TickTick or Google Keep","Recipes from what's on hand; health check-ins","A dated network evidence log and emails to the provider"],
      stack:["Claude vision","Notion MCP","TickTick MCP","Python","PowerShell"],
      steps:[
        ["model","Read a zone photo or receipt into rows: item, size, amount left, location"],
        ["model","Preview every add, change, used-up or tossed row"],
        ["me","Approve the preview"],
-       ["code","Write the rows in batches and confirm the count"],
+       ["tool","Write the rows in batches and confirm the count"],
        ["code","Log sleep from the wearable and packet loss from startup"],
-       ["me","Escalate with the evidence. A technician found an unauthorized splitter; loss fell from 1.05% to 0.09%"],
+       ["me","Escalate with the evidence: an unauthorized splitter was found; loss fell from 1.05% to 0.09%"],
      ],
      guard:["Size and amount left are separate fields; a size is never guessed","Nothing is written to the inventory without my approval"]},
-    {name:"Travel", file:"panorama-automation · trip builds", trigger:"Before and after each trip", status:"demand",
-     io:["DSLR and phone photos, GPS tracks, location history, itineraries, bookings, reading","Claude Code + Python: ExifTool, rawpy, OpenCV, Hugin; HTML and audio builds","Stitched panoramas, geotagged library, trip dashboard, itineraries, an audio walking tour"],
-     purpose:"Planning and keeping trips: itineraries and a trip dashboard before, then photos repaired, geotagged and stitched after, plus a self-guided audio tour.",
+    {short:"Panoramas, trip dashboard, audio tour", name:"Travel", file:"panorama-automation · trip builds", trigger:"Before and after each trip", status:"demand",
+     purpose:"Itineraries and a trip dashboard before; photos repaired, geotagged and stitched after; plus a self-guided audio tour.",
      inputs:["DSLR raw files and phone photos","Phone GPS track and location-history export","Itineraries, bookings and research notes","Readwise highlights for places to see"],
-     outputs:["Stitched panoramas with GPS and date (36 of 38 bursts)","2,394 photos time-corrected and 100% geotagged","Eurowinter '25 trip dashboard (HTML)","Itineraries with “next time in” notes","Baldwin Paris audio walking tour (offline web app)"],
+     outputs:["Stitched panoramas with GPS and date (36 of 38 bursts)","2,394 photos time-corrected and 100% geotagged","Eurowinter '25 trip dashboard (HTML)","Baldwin Paris audio walking tour (offline web app)"],
      stack:["Claude Code","Python + uv","ExifTool","rawpy","OpenCV","Hugin CLI","edge-tts","HTML, PWA"],
      steps:[
        ["code","Shift capture times to the true zone across EXIF, XMP and IPTC; idempotent and reversible"],
@@ -595,17 +620,10 @@ const WF = [
        ["model","Draft itineraries and the trip dashboard from bookings and notes"],
        ["code","Render tour narration per stop, re-rendering only stops whose text changed"],
      ],
+     links:[["Panorama repo and case study","https://github.com/anewt225/panorama-automation"],["Baldwin audio tour","https://anewt225.github.io/baldwin-paris-audio-tour/"]],
      guard:["Two agent defaults overruled after full-resolution review","Originals backed up before any metadata change"]},
   ],
-  checks:[
-    ["Why automate it","Monthly, tedious, and it has to be exact; or one-off, photo-heavy work that's slow by hand."],
-    ["Setup","One folder per stage for finance; one Notion database for the kitchen; one repo per travel build."],
-    ["Evaluate","A balance check on every account and a reconcile report every run; every inventory write previewed first."],
-    ["Optimize","Scripts do the arithmetic and metadata; the model reads one report or one photo at a time."],
-    ["Measure","Accounts reconciled and days since each export; food thrown away; panoramas that pass my review."],
-    ["Next","Receipt photos straight into the inventory; publish the panorama package as a portfolio piece."],
-  ],
-  artifact:{title:"Data contract: the unified ledger", sub:"Every institution's export is normalized into these columns before anything else happens.",
+  data:{title:"Data contract: the unified ledger", sub:"Every institution's export is normalized into these columns before anything else happens.",
     table:{head:["Column","Type","Rule"], rows:[
       ["date","date","Parsed from any of the known export formats"],
       ["institution, account","text","Account reduced to its last four digits"],
@@ -615,9 +633,19 @@ const WF = [
       ["running_balance","number","Where the export carries one; checked against statements"],
       ["source_file","text","Which export the row came from"],
       ["row key","md5 hash","date + account + amount + description; dedupes re-runs"],
-    ]}}
+    ]}},
+  rationale:[
+    ["Why automate it","Monthly, tedious, and it has to be exact; or one-off, photo-heavy work that's slow by hand."],
+    ["Setup","One folder per stage for finance; one Notion database for the kitchen; one repo per travel build."],
+    ["Quality controls","A balance check on every account and a reconcile report every run; every inventory write previewed first."],
+    ["Cost and speed","Scripts do the arithmetic and metadata; the model reads one report or one photo at a time."],
+    ["How I measure it","Accounts reconciled and days since each export; food thrown away; panoramas that pass my review."],
+    ["Next","Receipt photos straight into the inventory; publish the panorama package as a portfolio piece."],
+  ]
 }];
+WF.forEach(w => w.pieces.forEach((p,i) => { p.id = `${w.id}-${i+1}`; p.n = i+1; }));
 
+/* ============ PLATFORM ============ */
 const STACK = [
   ["AI agents","Claude Code (build and debug) · Claude desktop routines (scheduled) · Claude Opus 5 and Sonnet 5","Runs the routines; builds and maintains everything else"],
   ["Packaging","4 custom plugins (11 skills, 29 commands) · private git plugin marketplace · signed commits · 11 plugins installed in total","Versioned instructions; push a commit, click Update"],
@@ -643,144 +671,210 @@ const SOR = [
 ];
 const PRINCIPLES = [
   ["Observation without a forcing cadence is just logging","Every data source feeds a ceremony that ends in a decision: the standup, the retro or the plan.","Shows up as: the daily loop inside the weekly sprint"],
-  ["Computation in cron, judgment in the agent","Scripts produce every number. The model interprets and prioritizes; it never fetches and transforms.","Shows up as: the 2 KB usage summary, the finance pipeline"],
+  ["Computation in cron, judgment in the agent","Numbers that must be right come from scripts before the model sees them. Inside a routine the agent follows a fixed step file; its judgment goes to ranking, wording and spotting patterns.","Shows up as: the 2 KB usage summary, the finance pipeline"],
   ["Actions, not status","Every ceremony output starts with a verb. “Send the follow-up, 37 days overdue” beats “lead is cold.”","Shows up as: the top 3 block, /today"],
   ["Automate the boring ceremonies; keep the judgment ones human","Planning, reflection, the call to drop a dead lead, and every send stay with me.","Shows up as: the amber steps throughout"],
-  ["One owner per entity","Each kind of data has exactly one system of record. Mirrors exist for people, not automations.","Shows up as: the systems-of-record table"],
-  ["Grade every count by evidence","A meeting counts as held only with proof. Unknown is null, not zero. Work-adjacent time gets counted, not hidden.","Shows up as: the scorecard contract"],
+  ["One owner per entity","Each kind of data has exactly one system of record. Mirrors exist for people, not automations.","Shows up as: data source reconciliation"],
+  ["Grade every count by evidence","A meeting counts as held only with proof. Unknown is null, not zero. Work-adjacent time gets counted, not hidden.","Shows up as: the weekly scorecard"],
   ["Verify it myself, and date every claim","I check results independently, and every fact in memory says how and when it was verified.","Shows up as: six logged incidents where an undated note was read as fact"],
   ["Safe to re-run, nothing deleted","Ledgers and hashed keys make every run idempotent. Old items are demoted or archived, never removed.","Shows up as: synced-threads.txt, the ledger row key, monthly archives"],
 ];
-const BUILDS = [
-  ["Career tools","Job Search Assistant, shareable","My plugin rebuilt for other people: 8 standalone skills, a setup wizard, a Notion template and a build script that bundles shared files into each module.","Pattern: package it so someone else can run it","",""],
-  ["Career tools","Prioritizing Grid","A pairwise-ranking tool from What Color Is Your Parachute, with an express mode that uses transitivity to cut 45 comparisons to about 20.","Pattern: pick the algorithm, then the interface","https://anewt225.github.io/parachute/","Live site"],
-  ["For fun","Chronotype quiz","Combines the Munich Chronotype Questionnaire with morningness-eveningness and sleep-quality items; calculates social jet lag and gives recommendations by life area.","Pattern: validated instruments, plain-language results","",""],
-  ["For fun","The Twenty Rooms","A brand-identity quiz: a zero-to-one diagnostic that walks through twenty “rooms” to surface how someone wants to be seen.","Pattern: a structured interview as an interactive page","",""],
-  ["For fun","Philly events MCP server","A TypeScript MCP server that searches Do215, Visit Philly and Eventbrite at once, filters by category and neighborhood, and exports to Google Calendar.","Pattern: one tool interface over several messy sources","",""],
+
+/* ============ PROJECTS ============ */
+const FRANCHISE = {
+  phases:[
+    {n:1, cls:"me", name:"Discover", weeks:"2 weeks", gate:"Build or buy",
+     what:["Shadow managers and sit in on the weekly GM meeting","Map the inventory workflow, data flows and pain points","Score vendors (MarginEdge, R365, others) against a custom build"],
+     tech:["NCR Aloha Cloud POS (API)","7shifts labor and scheduling data","SharePoint catering CRM","Excel inventory sheets"],
+     deliver:["Current-state assessment","Data dictionary and data-flow diagram","Functional requirements","Vendor recommendation and roadmap"]},
+    {n:2, cls:"code", name:"Design", weeks:"2 weeks", gate:"Pilot go/no-go",
+     what:["Wireframe a one-screen, four-store dashboard","Prototype an iPad inventory form in the layout staff already know","Design a batch sheet that shows its math"],
+     tech:["Power BI","Power Apps","SharePoint data model","Weekday and weekend running averages with a manual override"],
+     deliver:["Dashboard prototype","Inventory form prototype","Data model","Prioritized features and pilot plan"]},
+    {n:3, cls:"model", name:"Deliver", weeks:"3–4 weeks", gate:"Launch",
+     what:["Pilot in one store, old and new in parallel for a week","Refine, then roll out to the other stores","Train managers and write SOPs"],
+     tech:["Daily data refresh","Batch sheets synced across stores","30 days of post-launch support"],
+     deliver:["Live dashboard","Working inventory system","Training materials","SOPs and an enhancement backlog"]},
+  ],
+  kpis:[
+    ["code","< 10 min","to review weekly KPIs across all stores, down from hours"],
+    ["code","< 24 h","maximum age of dashboard data, refreshed daily instead of weekly"],
+    ["code","< 15 min","to plan daily production, with running averages automatic"],
+    ["me","2 weeks","to train every manager; the legacy spreadsheet retired, not run alongside"],
+  ]
+};
+const GALLERY = [
+  ["Career tool","Prioritizing Grid","A pairwise-ranking tool from What Color Is Your Parachute, with an express mode that uses transitivity to cut 45 comparisons to about 20.",["HTML","JavaScript"],"https://anewt225.github.io/parachute/","Live site","Built 24 Jul 2026 in one day"],
+  ["Career tool","Job Search Assistant, shareable","My plugin rebuilt for other people: 8 standalone skills, a setup wizard, a Notion template and a build script that bundles shared files into each module.",["Claude skills","Python","Notion"],"","","Built 13 Oct 2026 in one session"],
+  ["Data","Contacts reconciliation","Four contact exports, 9,682 rows, reconciled to 5,731 unique people: deduped, merge-reviewed, and scored for which source is most complete.",["Python","pandas","CSV"],"","","Built 13 Oct 2026 in one day"],
+  ["Data","NYC Tech Week scraper","Pulled 1,606 events from the Tech Week calendar's API into a CSV, then ranked them against my targets to pick a week's schedule.",["Python","requests","pandas"],"","","Built May 2026"],
+  ["Recovery","Interview recording rescue","Recovered a usable interview transcript when the recorder caught only my mic: cleaned the audio, transcribed it, and spot-checked it against my notes.",["Audio cleanup","Speech-to-text"],"","","28 Jul 2026, the day of the interview"],
+  ["Research","AI year in review","Ran the same year-in-review prompts through ChatGPT, Claude, Gemini and NotebookLM, compared the answers, and turned them into a 2026 plan.",["Four assistants","Docs"],"","","December 2025"],
+  ["Writing","Agile ceremonies blog series","A planning board for a series on running agile ceremonies as a team of one, with every statistic sourced and dated.",["Claude artifact","Trello"],"","","Planned 27 Aug 2026"],
+  ["For fun","Chronotype quiz","Combines the Munich Chronotype Questionnaire with morningness-eveningness and sleep items; calculates social jet lag and gives recommendations.",["JavaScript","HTML"],"","","Built January 2026"],
+  ["For fun","The Twenty Rooms","A brand-identity quiz: a zero-to-one diagnostic through twenty “rooms” that surfaces how someone wants to be seen.",["HTML"],"","","Built 19 Oct 2026"],
+  ["For fun","Philly events MCP server","A TypeScript MCP server that searches Do215, Visit Philly and Eventbrite at once, filters by neighborhood, and exports to Google Calendar.",["TypeScript","MCP"],"","","Built December 2025"],
 ];
 
 /* ============ RENDER HELPERS ============ */
 const li = a => a.map(x => `<li>${x}</li>`).join("");
 const statusChip = p => p.status === "live" ? `<span class="chip live">Live</span>` : p.status === "off" ? `<span class="chip off">Inactive</span>` : `<span class="chip plain">On demand</span>`;
-function splitCounts(w){
-  const c = {code:0, model:0, me:0};
-  w.pieces.forEach(p => p.steps.forEach(s => c[s[0]]++));
-  return c;
-}
-function splitBar(w){
-  const c = splitCounts(w), t = c.code + c.model + c.me;
-  return `<div class="split" role="img" aria-label="${c.code} code steps, ${c.model} model steps, ${c.me} steps by me">
-    <i class="code" style="width:${c.code/t*100}%"></i><i class="model" style="width:${c.model/t*100}%"></i><i class="me" style="width:${c.me/t*100}%"></i></div>
-    <div class="split-l"><span>${c.code} code</span><span>${c.model} model</span><span>${c.me} me</span><span>of ${t} documented steps</span></div>`;
-}
-function flow(steps){
-  return `<div class="flow-scroll"><div class="flow">${steps.map((s,i) => `
-    <div class="fs ${s[0]}"><div class="dot" aria-hidden="true">${i+1}</div><div class="when">${s[1]}</div><div class="what">${s[2]}</div><div class="how">${s[3]}</div></div>`).join("")}</div></div>`;
-}
-function glance(w){
-  return `<div class="tbl-wrap"><table class="glance"><thead><tr><th>Phase</th><th>Inputs (data)</th><th>Process</th><th>Outputs</th></tr></thead><tbody>${w.pieces.map(p => `<tr><td>${p.name}<span class="how">${p.trigger}</span></td><td>${p.io[0]}</td><td>${p.io[1]}</td><td>${p.io[2]}</td></tr>`).join("")}</tbody></table></div>`;
-}
+const lead = p => { const c={code:0,tool:0,model:0,me:0}; p.steps.forEach(s=>c[s[0]]++); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0]; };
+function bar(c){ const t=c.code+c.tool+c.model+c.me; return `<div class="split" role="img" aria-label="${c.code} script, ${c.tool} agent action, ${c.model} agent judgment, ${c.me} me"><i class="code" style="width:${c.code/t*100}%"></i><i class="tool" style="width:${c.tool/t*100}%"></i><i class="model" style="width:${c.model/t*100}%"></i><i class="me" style="width:${c.me/t*100}%"></i></div>`; }
+function counts(steps){ const c={code:0,tool:0,model:0,me:0}; steps.forEach(s=>c[s[0]]++); return c; }
+function wfBar(w){ const c={code:0,tool:0,model:0,me:0}; w.pieces.forEach(p=>p.steps.forEach(s=>c[s[0]]++)); const t=c.code+c.tool+c.model+c.me;
+  return `${bar(c)}<div class="split-l"><span>${c.code} script</span><span>${c.tool} agent action</span><span>${c.model} agent judgment</span><span>${c.me} me</span><span>of ${t} documented steps</span></div>`; }
 function rubricHtml(r){
   if (!r) return "";
-  if (r.scale) return `<div><div class="lab">${r.title}</div><div class="tbl-wrap"><table><tbody>${r.scale.map(x => `<tr><td style="white-space:nowrap;font-weight:600">${x[0]}</td><td>${x[1]}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:13px;margin-top:8px">${r.note}</p></div>`;
+  if (r.scale) return `<div class="ccard"><div class="lab">${r.title}</div><div class="tbl-wrap"><table><tbody>${r.scale.map(x => `<tr><td style="white-space:nowrap;font-weight:600">${x[0]}</td><td>${x[1]}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:13px;margin-top:8px">${r.note}</p></div>`;
   const max = Math.max(...r.rows.map(x => x[1]));
-  return `<div><div class="lab">${r.title}</div><div class="tbl-wrap"><table><thead><tr><th>Dimension</th><th class="num">Weight</th></tr></thead><tbody>${r.rows.map(x => `<tr><td><span class="wt" style="width:${x[1]/max*60}px"></span>${x[0]}</td><td class="num">${x[1]}%</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:13px;margin-top:8px">${r.note}</p></div>`;
+  return `<div class="ccard"><div class="lab">${r.title}</div><div class="tbl-wrap"><table><thead><tr><th>Dimension</th><th class="num">Weight</th></tr></thead><tbody>${r.rows.map(x => `<tr><td><span class="wt" style="width:${x[1]/max*60}px"></span>${x[0]}</td><td class="num">${x[1]}%</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:13px;margin-top:8px">${r.note}</p></div>`;
 }
 function piece(p){
-  const fixes = p.fixes ? `<div><div class="lab">What broke, and the fix</div><div class="tbl-wrap"><table><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>${p.fixes.map(f => `<tr><td>${f[0]}</td><td>${f[1]}</td></tr>`).join("")}</tbody></table></div></div>` : "";
-  const rub = (p.rubric || p.rubric2) ? `<div class="two">${rubricHtml(p.rubric)}${rubricHtml(p.rubric2)}</div>` : "";
-  return `<details class="piece">
+  const c = counts(p.steps);
+  const extra = [];
+  if (p.rubric || p.rubric2) extra.push(`<div class="${p.rubric && p.rubric2 ? "two" : ""}">${rubricHtml(p.rubric)}${rubricHtml(p.rubric2)}</div>`);
+  if (p.fixes) extra.push(`<div class="ccard"><div class="lab">What broke, and the fix</div><div class="tbl-wrap"><table><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>${p.fixes.map(f => `<tr><td>${f[0]}</td><td>${f[1]}</td></tr>`).join("")}</tbody></table></div></div>`);
+  if (p.links) extra.push(`<div class="ccard"><div class="lab">See it</div><ul>${p.links.map(l => `<li><a href="${l[1]}">${l[0]} →</a></li>`).join("")}</ul></div>`);
+  return `<details class="piece" id="${p.id}">
     <summary>
+      <span class="pnum ${lead(p)}">${p.n}</span>
       <span class="ps-name">${p.name}</span>
       <span class="ps-meta"><span class="chip plain">${p.trigger}</span>${statusChip(p)}</span>
       <span class="ps-purpose">${p.purpose}${p.note ? ` <em>${p.note}.</em>` : ""}</span>
-      <span class="ps-toggle"><span class="o">Show the spec ↓</span><span class="c">Hide the spec ↑</span></span>
+      <span class="inside">
+        <span class="comp">Inputs <i>${p.inputs.length}</i></span>
+        <span class="comp">Outputs <i>${p.outputs.length}</i></span>
+        <span class="comp">Stack <i>${p.stack.length}</i></span>
+        <span class="comp">Process <i>${p.steps.length} steps</i> <span class="mini">${bar(c)}</span></span>
+        <span class="tog"><span class="o">Open ↓</span><span class="c">Close ↑</span></span>
+      </span>
     </summary>
     <div class="spec">
-      <div class="io">
-        <div><div class="lab">Inputs</div><ul>${li(p.inputs)}</ul></div>
-        <div><div class="lab">Outputs</div><ul>${li(p.outputs)}</ul></div>
-        <div><div class="lab">Stack</div><div class="stack">${p.stack.map(s => `<span class="chip plain">${s}</span>`).join("")}</div>
-          ${p.guard ? `<div class="lab" style="margin-top:16px">Guardrails</div><ul class="guard">${li(p.guard)}</ul>` : ""}</div>
+      <div class="cards3">
+        <div class="ccard"><div class="lab">Inputs</div><ul>${li(p.inputs)}</ul></div>
+        <div class="ccard"><div class="lab">Outputs</div><ul>${li(p.outputs)}</ul></div>
+        <div class="ccard"><div class="lab">Stack</div><div class="stack">${p.stack.map(s => `<span class="chip plain">${s}</span>`).join("")}</div>
+          ${p.guard ? `<div class="lab" style="margin-top:14px">Guardrails</div><ul class="guard">${li(p.guard)}</ul>` : ""}</div>
       </div>
-      <div><div class="lab">Process, step by step · ${p.file}</div><ol class="steps">${p.steps.map((s,i) => `<li><span class="sn">${i+1}</span><span><span class="chip ${s[0]}">${OWN[s[0]]}</span></span><span>${s[1]}</span></li>`).join("")}</ol></div>
-      ${rub}${fixes}
+      <div class="ccard"><div class="lab">Process · ${p.file}</div><ol class="steps">${p.steps.map((s,i) => `<li><span class="sn">${i+1}</span><span><span class="chip ${s[0]}">${OWN[s[0]]}</span></span><span>${s[1]}</span></li>`).join("")}</ol></div>
+      ${extra.join("")}
     </div>
   </details>`;
 }
+const fold = (id, title, sub, body, open) => `<details class="fold" id="${id}"${open ? " open" : ""}><summary><h3>${title}</h3>${sub ? `<span class="sub">${sub}</span>` : ""}<span class="tog"><span class="o">Show ↓</span><span class="c">Hide ↑</span></span></summary><div class="fold-body">${body}</div></details>`;
+const tableHtml = t => `<div class="tbl-wrap"><table><thead><tr>${t.head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map((c,i) => `<td${i===0?' style="font-weight:600"':""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+function mapHtml(w){
+  if (w.map === "cycle") return CYCLE;
+  if (w.map === "pipe") return `<div class="pipe-scroll"><div class="pipe">${w.pieces.map(p => `<button class="pstep ${lead(p)}" type="button" data-phase="${p.id}"><span class="dot">${p.n}</span><span class="what">${p.step}</span><span class="how">${p.how}</span></button>`).join("")}</div></div><p class="hint">Select a step to open its phase.</p>`;
+  if (w.map === "areas") return `<div class="areas">${w.pieces.map(p => `<button class="area ${lead(p)}" type="button" data-phase="${p.id}"><span class="num">${p.n}</span><b>${p.name}</b><span class="s">${p.short}</span></button>`).join("")}</div>`;
+  return "";
+}
 function workflowView(w){
-  const art = w.artifact.pre ? `<pre class="art">${w.artifact.pre}</pre>`
-    : `<div class="tbl-wrap"><table><thead><tr>${w.artifact.table.head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${w.artifact.table.rows.map(r => `<tr>${r.map((c,i) => `<td${i===0?' style="font-weight:600"':""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
-  const cyc = (w.cycle && CYCLE) ? `<div class="block"><h3>How the ceremonies connect</h3>${CYCLE}</div>` : "";
   return `<section class="view" id="${w.id}" role="tabpanel" aria-labelledby="tab-${w.id}" hidden>
     <div class="wf-head">
       <div><h2>${w.title}</h2><p class="job">${w.job}</p></div>
       <div class="tiles">${w.tiles.map(t => `<div class="tile"><div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join("")}</div>
     </div>
-    ${cyc}
-    <div class="block"><h3>${w.flowTitle}</h3><p class="sub">${w.flowSub}</p>${flow(w.flow)}</div>
-    <div class="block"><h3>Phases at a glance</h3><p class="sub">What data goes in, what happens to it, and what comes out. Open any phase below for the full spec.</p>${glance(w)}</div>
-    <div class="block"><h3>The phases</h3><p class="sub">Trigger, inputs, outputs, stack, and every step tagged by who does it.</p>
-      <div style="max-width:420px">${splitBar(w)}</div>
+    ${(w.map !== "cycle" || CYCLE) ? `<div class="block"><h3>${w.mapTitle}</h3>${mapHtml(w)}</div>` : ""}
+    <div class="block"><h3>The phases</h3><p class="sub">Each phase lists what's inside. Open one for its inputs, outputs, stack and every step, tagged by who does it.</p>
+      <div style="max-width:420px">${wfBar(w)}</div>
       <div class="pieces">${w.pieces.map(piece).join("")}</div></div>
-    <div class="block"><h3>${w.artifact.title}</h3><p class="sub">${w.artifact.sub}</p>${art}</div>
-    <div class="block"><h3>Checks</h3><p class="sub">The same six questions for every workflow, so no stage gets skipped.</p>
-      <div class="checks">${w.checks.map(c => `<div class="ck"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join("")}</div></div>
+    ${w.data ? fold(`${w.id}-data`, w.data.title, w.data.sub, tableHtml(w.data.table)) : ""}
+    <div class="block"><h3>Design rationale</h3><p class="sub">Why this workflow is built the way it is: the same six questions for every workflow, so no stage gets skipped.</p>
+      <div class="checks">${w.rationale.map(c => `<div class="ck"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join("")}</div></div>
   </section>`;
 }
 
 /* ============ VIEWS ============ */
 const main = document.getElementById("main");
 const overview = `<section class="view" id="overview" role="tabpanel" aria-labelledby="tab-overview">
-  <div class="block"><h3>Three workflows</h3><p class="sub">Each opens to the same layout: what it's for, how it flows, the phases at a glance, and a spec card for every phase.</p>
+  <div class="block">
+    <p class="lede">I run three workflows on Claude, Python and Notion: my weekly operating rhythm, my career pipeline, and personal projects across finances, home and travel. Scripts do the arithmetic, the model does the judgment, and I make every decision that leaves the building.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">32</div><div class="l">connectors on my Claude account, plus 3 local MCP servers</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">plugins I wrote: 11 skills, 29 commands, versioned in git</div></div>
+      <div class="stat"><div class="n">25</div><div class="l">tools in my custom TickTick MCP server (Python)</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">scheduled jobs: 3 Claude routines, 4 Windows tasks</div></div>
+      <div class="stat"><div class="n">127</div><div class="l">agent-written reports on file: standups, briefs, retros, plans</div></div>
+    </div>
+  </div>
+  <div class="block"><h3>Three workflows</h3><p class="sub">Each opens to the same cascade: a clickable map, the phases, and why it's built that way.</p>
     <div class="wf-cards">${WF.map(w => `<a class="wcard" href="#${w.id}" data-go="${w.id}">
       <h3>${w.title}</h3><p>${w.card}</p>
       <ul>${w.tiles.map(t => `<li><b>${t[0]}</b> ${t[1]}</li>`).join("")}</ul>
-      <div>${splitBar(w)}</div>
+      <div>${wfBar(w)}</div>
       <span class="go">Open ${w.tab} →</span></a>`).join("")}</div></div>
-  <div class="block"><h3>A week of runs</h3><p class="sub">${WF[0].flowSub}</p>${flow(WF[0].flow)}</div>
+  <div class="block"><h3>Also here</h3>
+    <div class="more">
+      <a class="wcard" href="#projects" data-go="projects"><div><h3>Projects</h3><p>A multi-unit franchise proposal, plus side builds and experiments.</p></div><span class="go">Open →</span></a>
+      <a class="wcard" href="#platform" data-go="platform"><div><h3>Platform</h3><p>The stack, the rules I build by, and which data source wins.</p></div><span class="go">Open →</span></a>
+    </div></div>
   <div class="block"><h3>What stays human</h3><p class="sub" style="color:var(--ink)">Planning, reflection, the call to drop a dead lead, and every message, payment or filing that leaves my machine. Scheduled runs draft and propose; they never send.</p></div>
 </section>`;
-const platform = `<section class="view" id="platform" role="tabpanel" aria-labelledby="tab-platform" hidden>
-  <div class="wf-head"><div><h2>Platform</h2><p class="job">What all three workflows share: the stack, who owns which data, the rules I build by, side builds, and a client proposal that uses the same patterns.</p></div></div>
-  <div class="block"><h3>The stack</h3>
-    <div class="tbl-wrap"><table style="min-width:640px"><thead><tr><th>Layer</th><th>Tools</th><th>What it does here</th></tr></thead><tbody>${STACK.map(r => `<tr><td style="font-weight:600;white-space:nowrap">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td></tr>`).join("")}</tbody></table></div></div>
-  <div class="block"><h3>Which source wins</h3><p class="sub">One owner per kind of data. When two tools disagree, the conflict rule decides.</p>
-    <div class="tbl-wrap"><table style="min-width:720px"><thead><tr><th>Data</th><th>Source of truth</th><th>Feeders and mirrors</th><th>Conflict rule</th></tr></thead><tbody>${SOR.map(r => `<tr><td style="font-weight:600">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div></div>
-  <div class="block"><h3>Rules I build by</h3>
-    <div class="princ">${PRINCIPLES.map((p,i) => `<div class="pr"><h4>${i+1}. ${p[0]}</h4><p>${p[1]}</p><p class="ev">${p[2]}</p></div>`).join("")}</div></div>
-  <div class="block"><h3>Side builds</h3><p class="sub">Standalone projects outside the three workflows. Travel builds live under Personal.</p>
-    <div class="builds">${BUILDS.map(b => `<div class="bcard"><span class="grp">${b[0]}</span><h4>${b[1]}</h4><p>${b[2]}</p><p class="pat">${b[3]}</p>${b[4] ? `<a href="${b[4]}">${b[5]} →</a>` : ""}</div>`).join("")}</div></div>
-  <div class="block"><h3>Applying it to a multi-unit franchise</h3>
-    <div class="sketch">
-      <span class="chip plain" style="justify-self:start">Proposal · February 2026 · client anonymized</span>
-      <p style="max-width:76ch">An ice cream franchisee with four stores and a fast-growing catering business asked for help with inventory, production and reporting. Production was set each day from a visual count and a spreadsheet averaging two weeks of usage, and it didn't sync between stores. The owner wanted staff to understand the why behind every number.</p>
-      <div class="facts"><span class="chip plain">4 stores, 1 opening</span><span class="chip plain">170 flavors, ~40 active</span><span class="chip plain">250 catering events targeted</span><span class="chip plain">NCR Aloha POS · 7shifts · SharePoint · Excel</span></div>
-      <div class="tbl-wrap"><table style="min-width:720px"><thead><tr><th>Phase</th><th>What happens</th><th>Tech and data</th><th>Deliverables</th></tr></thead><tbody>
-        <tr><td style="font-weight:600">Discover · 2 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: build or buy</span></td><td>Shadow managers and the weekly GM meeting; map the inventory workflow, data flows and pain points; score vendors against a custom build</td><td>NCR Aloha Cloud (API), 7shifts labor data, SharePoint catering CRM, Excel inventory</td><td>Current-state assessment, data dictionary, data-flow diagram, requirements, vendor recommendation</td></tr>
-        <tr><td style="font-weight:600">Design · 2 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: pilot go/no-go</span></td><td>Wireframe the dashboard; prototype an iPad inventory form; design a batch sheet that shows its math</td><td>Power BI, Power Apps, SharePoint data model; weekday and weekend running averages with a manual override</td><td>Dashboard prototype, inventory form, data model, prioritized features, pilot plan</td></tr>
-        <tr><td style="font-weight:600">Deliver · 3–4 weeks<span style="display:block;font:500 11.5px var(--mono);color:var(--muted)">Gate: launch</span></td><td>Pilot in one store with old and new running in parallel for a week; refine; roll out; train managers</td><td>Daily data refresh; batch sheets synced across stores; 30 days of support</td><td>Live dashboard, working inventory system, training materials, SOPs</td></tr>
-      </tbody></table></div>
-      <div><div class="lab">How success would be measured</div>
-        <div class="measures">
-          <div><h4>Dashboard</h4><p>Weekly KPIs reviewed in under 10 minutes, down from hours; data no more than 24 hours old; managers see their own store.</p></div>
-          <div><h4>Production</h4><p>Daily plan in under 15 minutes; running averages automatic; batch sheets synced, no phone calls between stores; less waste.</p></div>
-          <div class="me"><h4>Adoption</h4><p>Every manager trained within 2 weeks of launch; the legacy spreadsheet retired, not run alongside.</p></div>
-        </div></div>
-      <p class="callout"><b>What happened:</b> a month later the owner built his own version with AI in about two weeks, covering inventory, pricing and multi-store dashboards. Build versus buy has shifted: deep operating knowledge plus AI now beats a long vendor project, and the value moves to scoping, data definitions and adoption.</p>
-    </div></div>
-</section>`;
-main.innerHTML = overview + WF.map(workflowView).join("") + platform;
 
-/* ============ TABS ============ */
-const TABS = [["overview","Overview"], ...WF.map(w => [w.id, w.tab]), ["platform","Platform"]];
+const F = FRANCHISE;
+const projects = `<section class="view" id="projects" role="tabpanel" aria-labelledby="tab-projects" hidden>
+  <div class="wf-head"><div><h2>Projects</h2><p class="job">A client proposal that applies the same patterns to someone else's business, then side builds and experiments.</p></div></div>
+  <div class="block">
+    <div class="block-h" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px"><h3>Featured: multi-unit franchise proposal</h3><span class="chip plain">February 2026 · client anonymized</span></div>
+    <div class="feature">
+      <div class="tiles four">
+        <div class="tile"><div class="n">4</div><div class="l">ice cream stores, one opening</div></div>
+        <div class="tile"><div class="n">~40</div><div class="l">active flavors out of 170</div></div>
+        <div class="tile"><div class="n">250</div><div class="l">catering events targeted this year</div></div>
+        <div class="tile"><div class="n">7–8</div><div class="l">weeks, three phases, a gate after each</div></div>
+      </div>
+      <div class="before">
+        <div><div class="lab">Today: four systems, no shared view</div><div class="sys">
+          <div><b>NCR Aloha Cloud</b><span>Point of sale</span></div><div><b>7shifts</b><span>Scheduling and labor</span></div>
+          <div><b>SharePoint list</b><span>Catering CRM</span></div><div><b>Excel</b><span>Inventory, two-week averages by hand</span></div></div></div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="target"><b>Target: one view, one production sheet</b><ul><li>A dashboard for all stores: sales, labor %, discounts, inventory, refreshed daily</li><li>An iPad inventory form and a batch sheet with running averages, synced across stores</li><li>Built on the Microsoft tools already in place</li></ul></div>
+      </div>
+      <div><div class="lab">The plan · select a phase</div>
+        <div class="gates">${F.phases.map(p => `<button class="gate ${p.cls}" type="button" data-phase="franchise-${p.n}"><span class="w">Phase ${p.n} · ${p.weeks}</span><span class="t">${p.name}</span><span class="g">Gate: ${p.gate}</span></button>`).join("")}</div></div>
+      <div class="pieces">${F.phases.map(p => `<details class="piece" id="franchise-${p.n}"><summary><span class="pnum ${p.cls}">${p.n}</span><span class="ps-name">${p.name} · ${p.weeks}</span><span class="ps-meta"><span class="chip plain">Gate: ${p.gate}</span></span><span class="inside"><span class="comp">What happens <i>${p.what.length}</i></span><span class="comp">Tech and data <i>${p.tech.length}</i></span><span class="comp">Deliverables <i>${p.deliver.length}</i></span><span class="tog"><span class="o">Open ↓</span><span class="c">Close ↑</span></span></span></summary>
+        <div class="spec"><div class="cards3"><div class="ccard"><div class="lab">What happens</div><ul>${li(p.what)}</ul></div><div class="ccard"><div class="lab">Tech and data</div><ul>${li(p.tech)}</ul></div><div class="ccard"><div class="lab">Deliverables</div><ul>${li(p.deliver)}</ul></div></div></div></details>`).join("")}</div>
+      <div><div class="lab">How success would be measured</div>
+        <div class="kpis">${F.kpis.map(k => `<div class="kpi ${k[0]}"><div class="n">${k[1]}</div><p>${k[2]}</p></div>`).join("")}</div></div>
+      <p class="kicker"><b>What happened:</b> a month later the owner built his own version with AI in about two weeks, covering inventory, pricing and multi-store dashboards. Build versus buy has shifted: deep operating knowledge plus AI now beats a long vendor project, and the value moves to scoping, data definitions and adoption.</p>
+    </div>
+  </div>
+  <div class="block"><h3>Side builds and experiments</h3><p class="sub">Smaller projects outside the three workflows. Travel builds (panoramas, the Baldwin tour) live under Personal.</p>
+    <div class="gallery">${GALLERY.map(g => `<div class="gcard"><div class="top"><span class="grp">${g[0]}</span>${g[4] ? `<span class="chip live">Live</span>` : ""}</div><h4>${g[1]}</h4><p>${g[2]}</p><div class="stack">${g[3].map(s => `<span class="chip plain">${s}</span>`).join("")}</div>${g[6] ? `<p class="hint">${g[6]}</p>` : ""}${g[4] ? `<a href="${g[4]}">${g[5]} →</a>` : ""}</div>`).join("")}</div></div>
+</section>`;
+
+const platform = `<section class="view" id="platform" role="tabpanel" aria-labelledby="tab-platform" hidden>
+  <div class="wf-head"><div><h2>Platform</h2><p class="job">What all three workflows share. Jump to a section, or open them all.</p></div></div>
+  <div class="block">
+    <nav class="toc" aria-label="On this page">
+      <a href="#pf-stack" data-fold="pf-stack">The stack <span>7 layers</span></a>
+      <a href="#pf-rules" data-fold="pf-rules">Rules I build by <span>8 rules</span></a>
+      <a href="#pf-sor" data-fold="pf-sor">Data source reconciliation <span>12 data types</span></a>
+      <a href="#" id="pf-all">Open all</a>
+    </nav>
+  </div>
+  <div class="block" style="gap:0">
+    ${fold("pf-stack","The stack","Seven layers, from agents to publishing",
+      `<div class="tbl-wrap"><table style="min-width:640px"><thead><tr><th>Layer</th><th>Tools</th><th>What it does here</th></tr></thead><tbody>${STACK.map(r => `<tr><td style="font-weight:600;white-space:nowrap">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td></tr>`).join("")}</tbody></table></div><a class="top-link" href="#top">Back to top ↑</a>`)}
+    ${fold("pf-rules","Rules I build by","Drawn from my own notes and the system's operating model",
+      `<div class="princ">${PRINCIPLES.map((p,i) => `<div class="pr"><h4>${i+1}. ${p[0]}</h4><p>${p[1]}</p><p class="ev">${p[2]}</p></div>`).join("")}</div><a class="top-link" href="#top">Back to top ↑</a>`)}
+    ${fold("pf-sor","Data source reconciliation","One owner per kind of data; the conflict rule decides",
+      `<div class="tbl-wrap"><table style="min-width:720px"><thead><tr><th>Data</th><th>Source of truth</th><th>Feeders and mirrors</th><th>Conflict rule</th></tr></thead><tbody>${SOR.map(r => `<tr><td style="font-weight:600">${r[0]}</td><td>${r[1]}</td><td style="color:var(--muted)">${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div><a class="top-link" href="#top">Back to top ↑</a>`)}
+  </div>
+</section>`;
+main.innerHTML = overview + WF.map(workflowView).join("") + projects + platform;
+
+/* ============ INTERACTION ============ */
+const TABS = [["overview","Overview"], ...WF.map(w => [w.id, w.tab]), ["projects","Projects"], ["platform","Platform"]];
 const tabsEl = document.getElementById("tabs");
 tabsEl.innerHTML = TABS.map(([id,l]) => `<button class="tab" role="tab" id="tab-${id}" aria-controls="${id}" aria-selected="false">${l}</button>`).join("");
 function showTab(id, scroll){
   TABS.forEach(([t]) => { document.getElementById(t).hidden = t !== id; document.getElementById("tab-"+t).setAttribute("aria-selected", String(t === id)); });
-  try { localStorage.setItem("rig-tab-v3", id); } catch(e){}
+  try { localStorage.setItem("rig-tab-v4", id); } catch(e){}
   try { history.replaceState(null, "", "#"+id); } catch(e){}
-  if (scroll) document.querySelector(".bar").scrollIntoView({block:"start"});
+  if (scroll) window.scrollTo({top:0});
 }
 TABS.forEach(([t]) => document.getElementById("tab-"+t).addEventListener("click", () => showTab(t)));
 tabsEl.addEventListener("keydown", e => {
@@ -790,10 +884,20 @@ tabsEl.addEventListener("keydown", e => {
   showTab(nx); document.getElementById("tab-"+nx).focus();
 });
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", e => { e.preventDefault(); showTab(b.dataset.go, true); }));
+function openPhase(id){
+  const d = document.getElementById(id); if (!d) return;
+  d.open = true;
+  d.scrollIntoView({block:"start"});
+  d.classList.add("flash"); setTimeout(() => d.classList.remove("flash"), 1200);
+}
+main.addEventListener("click", e => { const t = e.target.closest("[data-phase]"); if (t) { e.preventDefault(); openPhase(t.dataset.phase); } });
+main.addEventListener("keydown", e => { const t = e.target.closest("g[data-phase]"); if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openPhase(t.dataset.phase); } });
+document.querySelectorAll("[data-fold]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const d = document.getElementById(a.dataset.fold); d.open = true; d.scrollIntoView({block:"start"}); }));
+document.getElementById("pf-all").addEventListener("click", e => { e.preventDefault(); const all = [...document.querySelectorAll("#platform details.fold")]; const open = !all.every(d => d.open); all.forEach(d => d.open = open); e.target.textContent = open ? "Close all" : "Open all"; });
 const h = (location.hash || "").slice(1);
 const alias = {money:"personal"};
 let start = TABS.some(t => t[0] === h) ? h : (alias[h] || null);
-if (!start) { try { start = localStorage.getItem("rig-tab-v3"); } catch(e){} }
+if (!start) { try { start = localStorage.getItem("rig-tab-v4"); } catch(e){} }
 showTab(TABS.some(t => t[0] === start) ? start : "overview");
 })();
 </script>
