@@ -279,7 +279,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
   <div class="wrap">
     <div class="title-row">
       <div><div class="eyebrow">Working notes · updated 20 Oct 2026</div><h1>Alex Newton's AI rig</h1></div>
-      <div class="who">Data strategy &amp; operations · Philadelphia<br><a href="https://www.linkedin.com/in/anewt">linkedin.com/in/anewt</a> · <a href="https://github.com/anewt225">github.com/anewt225</a></div>
+      <div class="who">Strategy &amp; Operations | Data &amp; AI | Hospitality Technology<br>New York City Metropolitan Area · <a href="mailto:alexandernewton@gmail.com">alexandernewton@gmail.com</a><br><a href="https://www.linkedin.com/in/anewt">linkedin.com/in/anewt</a> · <a href="https://github.com/anewt225">github.com/anewt225</a></div>
     </div>
   </div>
 </header>
@@ -834,8 +834,8 @@ const projects = `<section class="view" id="projects" role="tabpanel" aria-label
       </div>
       <div><div class="lab">The plan · select a phase</div>
         <div class="gates">${F.phases.map(p => `<button class="gate ${p.cls}" type="button" data-phase="franchise-${p.n}"><span class="w">Phase ${p.n} · ${p.weeks}</span><span class="t">${p.name}</span><span class="g">Gate: ${p.gate}</span></button>`).join("")}</div></div>
-      <div class="pieces">${F.phases.map(p => `<details class="piece" id="franchise-${p.n}"><summary><span class="pnum ${p.cls}">${p.n}</span><span class="ps-name">${p.name} · ${p.weeks}</span><span class="ps-meta"><span class="chip plain">Gate: ${p.gate}</span></span><span class="inside"><span class="comp">What happens <i>${p.what.length}</i></span><span class="comp">Tech and data <i>${p.tech.length}</i></span><span class="comp">Deliverables <i>${p.deliver.length}</i></span><span class="tog"><span class="o">Open ↓</span><span class="c">Close ↑</span></span></span></summary>
-        <div class="spec"><div class="cards3"><div class="ccard"><div class="lab">What happens</div><ul>${li(p.what)}</ul></div><div class="ccard"><div class="lab">Tech and data</div><ul>${li(p.tech)}</ul></div><div class="ccard"><div class="lab">Deliverables</div><ul>${li(p.deliver)}</ul></div></div></div></details>`).join("")}</div>
+      <div class="pieces">${F.phases.map(p => `<details class="piece" id="franchise-${p.n}"><summary><span class="pnum ${p.cls}">${p.n}</span><span class="ps-name">${p.name} · ${p.weeks}</span><span class="ps-meta"><span class="chip plain">Gate: ${p.gate}</span></span><span class="inside"><span class="comp">Inputs: tech and data <i>${p.tech.length}</i></span><span class="comp">Process: what happens <i>${p.what.length}</i></span><span class="comp">Outputs: deliverables <i>${p.deliver.length}</i></span><span class="tog"><span class="o">Open ↓</span><span class="c">Close ↑</span></span></span></summary>
+        <div class="spec"><div class="cards3"><div class="ccard"><div class="lab">Inputs: tech and data</div><ul>${li(p.tech)}</ul></div><div class="ccard"><div class="lab">Process: what happens</div><ul>${li(p.what)}</ul></div><div class="ccard"><div class="lab">Outputs: deliverables</div><ul>${li(p.deliver)}</ul></div></div></div></details>`).join("")}</div>
       <div><div class="lab">How success would be measured</div>
         <div class="kpis">${F.kpis.map(k => `<div class="kpi ${k[0]}"><div class="n">${k[1]}</div><p>${k[2]}</p></div>`).join("")}</div></div>
       <p class="kicker"><b>What happened:</b> a month later the owner built his own version with AI in about two weeks, covering inventory, pricing and multi-store dashboards. Build versus buy has shifted: deep operating knowledge plus AI now beats a long vendor project, and the value moves to scoping, data definitions and adoption.</p>
